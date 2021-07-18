@@ -1,0 +1,181 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model User {
+    id            String   @id @default(cuid())
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    username      String?
+    email         String   @unique
+    plexUUID      String   @unique
+    plexId        Int      @unique
+    plexAuthToken String
+    thumb         String
+    role          Role     @default(USER)
+
+    authenticators      Authenticator[]
+    accounts            LinkedAccount[]
+    tokens              Token[]
+    sessions            Session[]
+    scrobbles           Scrobble[]
+    servers             Server[]
+    torrentClients      TorrentClient[]
+    seriesSubscriptions SeriesSubscription[]
+}
+
+model Authenticator {
+    id                  String      @id @default(cuid())
+    createdAt           DateTime    @default(now())
+    updatedAt           DateTime    @updatedAt
+    credentialID        Bytes       @unique
+    credentialPublicKey Bytes
+    counter             Int
+    transports          Transport[]
+
+    user   User?   @relation(fields: [userId], references: [id])
+    userId String?
+}
+
+enum Transport {
+    USB
+    BLE
+    NFC
+    INTERNAL
+}
+
+enum Role {
+    USER
+    ADMIN
+}
+
+model Session {
+    id                 String    @id @default(cuid())
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+    expiresAt          DateTime?
+    hashedSessionToken String?
+    antiCSRFToken      String?
+
+    user   User?   @relation(fields: [userId], references: [id])
+    userId String?
+}
+
+model Token {
+    id          String    @id @default(cuid())
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    hashedToken String
+    expiresAt   DateTime
+    type        TokenType
+
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+
+    @@unique([hashedToken])
+}
+
+enum TokenType {
+    ACCESS
+    REFRESH
+}
+
+model Server {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    uuid      String   @unique
+    secret    String
+
+    users     User[]
+    scrobbles Scrobble[]
+}
+
+model Scrobble {
+    id              String         @id @default(cuid())
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+    status          ScrobbleStatus
+    providerMediaId String
+    episode         Int
+
+    user     User            @relation(fields: [userId], references: [id])
+    userId   String
+    server   Server          @relation(fields: [serverId], references: [id])
+    serverId String
+    accounts LinkedAccount[]
+}
+
+enum ScrobbleStatus {
+    IGNORED
+    TRACKED
+    ERRORED
+}
+
+model LinkedAccount {
+    id                 String    @id @default(cuid())
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+    provider           Provider
+    accountId          String    @unique
+    accessToken        String
+    accessTokenExpires DateTime?
+    refreshToken       String?
+
+    scrobbles Scrobble[]
+    user      User       @relation(fields: [userId], references: [id])
+    userId    String
+}
+
+enum Provider {
+    ANILIST
+    KITSU
+}
+
+model Encoder {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    name      String
+    rssURL    String
+
+    userSubscriptions SeriesSubscription[]
+}
+
+model TorrentClient {
+    id            String                   @id @default(cuid())
+    createdAt     DateTime                 @default(now())
+    updatedAt     DateTime                 @updatedAt
+    client        TorrentClientApplication
+    clientVersion String
+
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+}
+
+enum TorrentClientApplication {
+    DELUGE
+    RTORRENT
+    QBITTORRENT
+    UTORRENT
+}
+
+model SeriesSubscription {
+    id              String   @id @default(cuid())
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    nameIncludes    String
+    nameExcludes    String[]
+    providerMediaId String
+
+    user      User    @relation(fields: [userId], references: [id])
+    userId    String
+    encoder   Encoder @relation(fields: [encoderId], references: [id])
+    encoderId String
+
+}
