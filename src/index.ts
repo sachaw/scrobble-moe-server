@@ -1,21 +1,25 @@
 import "reflect-metadata";
 
-import { ApolloError, ApolloServer } from "apollo-server";
+import { ApolloServer } from "apollo-server";
 import { config } from "dotenv";
 import { verify } from "jsonwebtoken";
 import { buildSchema } from "type-graphql";
 
 import { PrismaClient, User } from "@prisma/client";
 import * as Sentry from "@sentry/node";
+import { Transaction } from "@sentry/types";
 
 import { authCheck } from "./auth/authCheck";
 import { AuthResolver } from "./auth/authResolver";
 import { ScrobbleResolver } from "./models/scrobbleResolver";
 import { UserResolver } from "./models/userResolver";
+import sentryPlugin from "./plugins/sentry";
+import sentryPerformancePlugin from "./plugins/sentryPerformance";
 
 export interface Context {
   prisma: PrismaClient;
   user: User | undefined;
+  transaction: Transaction;
 }
 
 Sentry.init({
@@ -36,6 +40,10 @@ const app = async () => {
   new ApolloServer({
     schema,
     context: async ({ req }): Promise<Context> => {
+      const transaction = Sentry.startTransaction({
+        op: "gql",
+        name: "GraphQLTransaction",
+      });
       const token = req.headers.authorization || "";
       let user: User | undefined;
       const prisma = new PrismaClient();
@@ -51,48 +59,9 @@ const app = async () => {
         }
       }
 
-      return { prisma, user };
+      return { prisma, user, transaction };
     },
-    plugins: [
-      {
-        async requestDidStart(ctx) {
-          return {
-            async didEncounterErrors(ctx) {
-              // If we couldn't parse the operation, don't
-              // do anything here
-              if (!ctx.operation) {
-                return;
-              }
-              for (const err of ctx.errors) {
-                // Only report internal server errors,
-                // all errors extending ApolloError should be user-facing
-                if (err instanceof ApolloError) {
-                  continue;
-                }
-                // Add scoped report details and send to Sentry
-                Sentry.withScope((scope) => {
-                  // Annotate whether failing operation was query/mutation/subscription
-                  scope.setTag("kind", ctx.operation.operation);
-                  // Log query and variables as extras
-                  // (make sure to strip out sensitive data!)
-                  scope.setExtra("query", ctx.request.query);
-                  scope.setExtra("variables", ctx.request.variables);
-                  if (err.path) {
-                    // We can also add the path as breadcrumb
-                    scope.addBreadcrumb({
-                      category: "query-path",
-                      message: err.path.join(" > "),
-                      level: Sentry.Severity.Debug,
-                    });
-                  }
-                  Sentry.captureException(err);
-                });
-              }
-            },
-          };
-        },
-      },
-    ],
+    plugins: [sentryPlugin, sentryPerformancePlugin],
   }).listen({ port: 4000 }, () =>
     console.log(`
 🚀 Server ready at: http://localhost:4000`)
