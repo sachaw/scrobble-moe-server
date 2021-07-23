@@ -1,12 +1,31 @@
 import "reflect-metadata";
 
-import { Arg, Authorized, Ctx, Field, FieldResolver, InputType, Query, Resolver, Root } from "type-graphql";
+import {
+  Arg,
+  Authorized,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
+  Query,
+  Resolver,
+  Root,
+} from "type-graphql";
 
-import { Role, Scrobble, SeriesSubscription, Server, Session, TorrentClient } from "@prisma/client";
+import {
+  Authenticator,
+  LinkedAccount,
+  Role,
+  Scrobble,
+  SeriesSubscription,
+  Server,
+  Session,
+  Token,
+  TorrentClient,
+} from "@prisma/client";
 
 import { Context } from "../";
 import { User } from "./user";
-import { Authenticator, LinkedAccount, Token } from ".pnpm/@prisma+client@2.27.0_prisma@2.27.0/node_modules/.prisma/client";
 
 @InputType()
 class UserUniqueInput {
@@ -96,7 +115,10 @@ export class UserResolver {
   }
 
   @FieldResolver()
-  async seriesSubscriptions(@Root() user: User, @Ctx() ctx: Context): Promise<SeriesSubscription[]> {
+  async seriesSubscriptions(
+    @Root() user: User,
+    @Ctx() ctx: Context
+  ): Promise<SeriesSubscription[]> {
     return ctx.prisma.user
       .findUnique({
         where: {

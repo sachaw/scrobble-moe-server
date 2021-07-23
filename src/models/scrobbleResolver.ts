@@ -1,12 +1,21 @@
 import "reflect-metadata";
 
-import { Arg, Authorized, Ctx, Field, FieldResolver, InputType, Query, Resolver, Root } from "type-graphql";
+import {
+  Arg,
+  Authorized,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
+  Query,
+  Resolver,
+  Root,
+} from "type-graphql";
 
-import { Role, Server, User } from "@prisma/client";
+import { LinkedAccount, Role, Server, User } from "@prisma/client";
 
 import { Context } from "../";
 import { Scrobble } from "./scrobble";
-import { LinkedAccount } from ".pnpm/@prisma+client@2.27.0_prisma@2.27.0/node_modules/.prisma/client";
 
 @InputType()
 class ScrobbleUniqueInput {
@@ -53,7 +62,10 @@ export class ScrobbleResolver {
 
   @Authorized(Role.ADMIN, Role.USER)
   @Query((returns) => Scrobble, { nullable: true })
-  async allScrobbles(@Arg("scrobbleUniqueInput") scrobbleUniqueInput: ScrobbleUniqueInput, @Ctx() ctx: Context) {
+  async allScrobbles(
+    @Arg("scrobbleUniqueInput") scrobbleUniqueInput: ScrobbleUniqueInput,
+    @Ctx() ctx: Context
+  ) {
     if (ctx.user.role && ctx.user.role === Role.ADMIN) {
       return ctx.prisma.scrobble.findMany({
         where: {
