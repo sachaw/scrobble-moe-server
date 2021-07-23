@@ -15,7 +15,7 @@ import { UserResolver } from "./models/userResolver";
 
 export interface Context {
   prisma: PrismaClient;
-  user?: User;
+  user: User | undefined;
 }
 
 Sentry.init({

@@ -5,7 +5,7 @@ import { Context } from "../";
 export const authCheck: AuthChecker<Context> = async ({ root, args, context, info }, roles) => {
   const { user, prisma } = context;
 
-  if (!user.id) {
+  if (!user) {
     return false;
   }
 
