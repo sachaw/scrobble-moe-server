@@ -79,7 +79,7 @@ export class AuthResolver {
                 sub: user.id,
                 type: "access",
               },
-              process.env.TOKEN_SECRET
+              process.env.JWT_SECRET
             ),
             expiresAt: accessTokenExpires,
           },
@@ -95,7 +95,7 @@ export class AuthResolver {
                 sub: user.id,
                 type: "refresh",
               },
-              process.env.TOKEN_SECRET
+              process.env.JWT_SECRET
             ),
             expiresAt: refreshTokenExpires,
           },

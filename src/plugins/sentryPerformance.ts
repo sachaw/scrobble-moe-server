@@ -6,7 +6,7 @@ const plugin: ApolloServerPlugin = {
       ctx.context.transaction.setName(ctx.request.operationName!);
     }
     return {
-      async willSendResponse({ context }) {
+      async willSendResponse(ctx) {
         ctx.context.transaction.finish();
       },
       async executionDidStart() {
