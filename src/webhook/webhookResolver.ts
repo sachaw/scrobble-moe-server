@@ -25,7 +25,7 @@ export class WebhookInput {
 
 @Resolver(Webhook)
 export class WebhookResolver {
-  @Mutation((returns) => [Webhook])
+  @Mutation((returns) => Webhook)
   async scrobble(
     @Arg("webhookInput") webhookInput: WebhookInput,
     @Ctx() ctx: Context
@@ -33,7 +33,6 @@ export class WebhookResolver {
     const server = await ctx.prisma.server.findUnique({
       where: {
         secret: webhookInput.secret,
-        uuid: webhookInput.serverUUID,
       },
       include: {
         users: true,
@@ -43,6 +42,7 @@ export class WebhookResolver {
     if (!server) {
       return {
         success: false,
+        reason: "Server not found",
       };
     }
 
@@ -51,11 +51,13 @@ export class WebhookResolver {
     if (!user) {
       return {
         success: false,
+        reason: "User not found",
       };
     }
 
     return {
       success: true,
+      reason: "Unknown error",
     };
   }
 }

@@ -1,8 +1,8 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType } from "type-graphql";
 
-import { SeriesSubscription } from './seriesSubscription';
+import { SeriesSubscription } from "./seriesSubscription";
 
 @ObjectType()
 export class Encoder {
@@ -22,5 +22,5 @@ export class Encoder {
   rssURL: string;
 
   @Field((type) => [SeriesSubscription])
-  userSubscription: SeriesSubscription[];
+  userSubscriptions: SeriesSubscription[];
 }

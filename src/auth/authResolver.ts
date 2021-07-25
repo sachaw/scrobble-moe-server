@@ -1,10 +1,27 @@
 import axios from "axios";
-import { sign } from "jsonwebtoken";
 import { PlexOauth } from "plex-oauth";
-import { Arg, Ctx, Query, Resolver } from "type-graphql";
+import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 
-import { Context } from "../";
-import { PlexLoginUrl, PlexPinResponse } from "./auth";
+import { AuthenticationError } from "@frontendmonster/graphql-utils";
+import { Role } from "@prisma/client";
+import {
+  generateAssertionOptions,
+  generateAttestationOptions,
+  verifyAttestationResponse,
+} from "@simplewebauthn/server";
+import { AuthenticatorTransport } from "@simplewebauthn/typescript-types";
+
+import { Context } from "../lib/context";
+import { generateTemporaryToken, generateTokens } from "../utils/auth";
+import {
+  AssertionOptions,
+  AttestationOptions,
+  AttestationVerificationInput,
+  PlexLoginUrl,
+  PlexPinInput,
+  TemporaryTokenResponse,
+  TokenResponse,
+} from "./auth";
 
 @Resolver(PlexLoginUrl)
 export class AuthResolver {
@@ -30,9 +47,92 @@ export class AuthResolver {
     ];
   }
 
-  @Query(() => [PlexPinResponse])
-  async pinCheck(@Ctx() ctx: Context, @Arg("pin") pin: number) {
-    const token = await this.plexOauth.checkForAuthToken(pin);
+  @Authorized(Role.ADMIN, Role.USER)
+  @Query((returns) => AssertionOptions)
+  async generateAssertionOptions(@Ctx() ctx: Context) {
+    const authenticators = await ctx.prisma.authenticator.findMany({
+      where: {
+        revoked: false,
+        user: {
+          id: ctx.user.id,
+        },
+      },
+    });
+
+    const options = generateAssertionOptions({
+      rpID: process.env.RP_ID,
+      allowCredentials: authenticators.map((authenticator) => {
+        return {
+          id: authenticator.credentialID,
+          transports: authenticator.transports.map(
+            (transport) => transport.toLowerCase() as AuthenticatorTransport
+          ),
+          type: "public-key",
+        };
+      }),
+    });
+
+    return {
+      assertionOptions: JSON.stringify(options),
+    };
+  }
+
+  @Authorized(Role.ADMIN, Role.USER)
+  @Query((returns) => AttestationOptions)
+  async generateAttestationOptions(@Ctx() ctx: Context) {
+    const revokedAuthenticators = await ctx.prisma.authenticator.findMany({
+      where: {
+        revoked: true,
+        user: {
+          id: ctx.user.id,
+        },
+      },
+    });
+
+    const options = generateAttestationOptions({
+      rpID: process.env.RP_ID,
+      rpName: process.env.RP_NAME,
+      userID: ctx.user.id,
+      userName: ctx.user.username,
+      attestationType: "direct",
+      authenticatorSelection: {
+        requireResidentKey: true,
+      },
+      excludeCredentials: revokedAuthenticators.map((authenticator) => {
+        return {
+          id: authenticator.credentialID,
+          transports: authenticator.transports.map(
+            (transport) => transport.toLowerCase() as AuthenticatorTransport
+          ),
+          type: "public-key",
+        };
+      }),
+    });
+
+    const challengeExpires = new Date(new Date().getTime() + 1000 * 60 * 1); // 1 minute
+
+    await ctx.prisma.user.update({
+      data: {
+        authenticationChallenge: options.challenge,
+        authenticationChallengeExpiresAt: challengeExpires,
+      },
+      where: {
+        id: ctx.user.id,
+      },
+    });
+
+    return {
+      attestationOptions: JSON.stringify(options),
+    };
+  }
+
+  @Mutation(() => TemporaryTokenResponse)
+  async plexPinSignin(
+    @Ctx() ctx: Context,
+    @Arg("plexPinInput")
+    plexPinInput: PlexPinInput
+  ) {
+    const token = await this.plexOauth.checkForAuthToken(plexPinInput.pin);
 
     if (!token) {
       return null;
@@ -66,52 +166,53 @@ export class AuthResolver {
           },
         });
 
-        const accessTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 3);
-        const refreshTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 40);
-
-        const accessToken = await ctx.prisma.token.create({
-          data: {
-            userId: user.id,
-            type: "ACCESS",
-            hashedToken: sign(
-              {
-                exp: accessTokenExpires.getTime(),
-                sub: user.id,
-                type: "access",
-              },
-              process.env.JWT_SECRET
-            ),
-            expiresAt: accessTokenExpires,
-          },
-        });
-
-        const refreshToken = await ctx.prisma.token.create({
-          data: {
-            userId: user.id,
-            type: "REFRESH",
-            hashedToken: sign(
-              {
-                exp: refreshTokenExpires.getTime(),
-                sub: user.id,
-                type: "refresh",
-              },
-              process.env.JWT_SECRET
-            ),
-            expiresAt: refreshTokenExpires,
-          },
-        });
-
-        console.log(accessToken);
-        console.log(refreshToken);
-
-        return [
-          {
-            accessToken: accessToken.hashedToken,
-            accessTokenExpires: accessToken.createdAt,
-            refreshToken: refreshToken.hashedToken,
-            refreshTokenExpires: refreshToken.createdAt,
-          },
-        ];
+        return await generateTemporaryToken(ctx.prisma, user);
       });
+  }
+
+  @Authorized(Role.ADMIN, Role.USER)
+  @Mutation((returns) => TokenResponse)
+  async verifyAttestation(
+    @Arg("attestationVerificationInput")
+    attestationVerificationInput: AttestationVerificationInput,
+    @Ctx() ctx: Context
+  ): Promise<TokenResponse> {
+    if (
+      !ctx.user.authenticationChallenge ||
+      ctx.user.authenticationChallengeExpiresAt < new Date()
+    ) {
+      throw new AuthenticationError("Invalid or expired challenge");
+    }
+
+    const verification = await verifyAttestationResponse({
+      credential: JSON.parse(attestationVerificationInput.attestationVerificationInput),
+      expectedChallenge: ctx.user.authenticationChallenge,
+      expectedOrigin: process.env.RP_ORIGIN,
+      expectedRPID: process.env.RP_ID,
+    });
+
+    if (!verification.verified) {
+      throw new AuthenticationError("Challenge Failed");
+    }
+
+    console.log(verification);
+
+    await ctx.prisma.authenticator.create({
+      data: {
+        AAGUID: verification.attestationInfo.aaguid,
+        credentialID: verification.attestationInfo.credentialID,
+        credentialPublicKey: verification.attestationInfo.credentialPublicKey,
+        counter: verification.attestationInfo.counter,
+        revoked: false,
+        transports: [], // TODO: Add transports from attestation
+        user: {
+          connect: {
+            id: ctx.user.id,
+          },
+        },
+      },
+    });
+
+    return await generateTokens(ctx.prisma, ctx.user);
   }
 }

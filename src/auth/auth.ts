@@ -1,12 +1,6 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ObjectType } from 'type-graphql';
-
-// @ObjectType()
-// export class AttestationOptions {
-//   @Field()
-//   options: PublicKeyCredentialCreationOptionsJSON;
-// }
+import { Field, InputType, ObjectType } from "type-graphql";
 
 @ObjectType()
 export class PlexLoginUrl {
@@ -17,8 +11,23 @@ export class PlexLoginUrl {
   token: number;
 }
 
+@InputType()
+export class PlexPinInput {
+  @Field()
+  pin: number;
+}
+
 @ObjectType()
-export class PlexPinResponse {
+export class TemporaryTokenResponse {
+  @Field()
+  token: string;
+
+  @Field()
+  tokenExpires: Date;
+}
+
+@ObjectType()
+export class TokenResponse {
   @Field()
   accessToken: string;
 
@@ -26,8 +35,32 @@ export class PlexPinResponse {
   refreshToken: string;
 
   @Field()
-  accessTokenExpires: string;
+  accessTokenExpires: Date;
 
   @Field()
-  refreshTokenExpires: string;
+  refreshTokenExpires: Date;
+}
+
+@ObjectType()
+export class AssertionOptions {
+  @Field()
+  assertionOptions: string;
+}
+
+@ObjectType()
+export class AttestationOptions {
+  @Field()
+  attestationOptions: string;
+}
+
+@InputType()
+export class AttestationVerificationInput {
+  @Field()
+  attestationVerificationInput: string;
+}
+
+@InputType()
+export class AssertionVerificationInput {
+  @Field()
+  assertionVerificationInput: string;
 }

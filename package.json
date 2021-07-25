@@ -3,6 +3,7 @@
     "start": "ts-node-dev --no-notify --respawn --transpile-only src/index.ts"
   },
   "dependencies": {
+    "@frontendmonster/graphql-utils": "^4.0.1",
     "@prisma/client": "^2.27.0",
     "@sentry/node": "^6.10.0",
     "@sentry/tracing": "^6.10.0",
@@ -19,7 +20,8 @@
     "jsonwebtoken": "^8.5.1",
     "plex-oauth": "^1.2.0",
     "reflect-metadata": "^0.1.13",
-    "type-graphql": "^1.1.1"
+    "type-graphql": "^1.1.1",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@simplewebauthn/typescript-types": "^3.0.0",

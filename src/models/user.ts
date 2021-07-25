@@ -48,6 +48,12 @@ export class User {
   @Field()
   thumb: string;
 
+  @Field()
+  authenticationChallenge: string;
+
+  @Field()
+  authenticationChallengeExpiresAt: Date;
+
   @Field((type) => Role)
   role: Role;
 

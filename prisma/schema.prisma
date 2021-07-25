@@ -8,16 +8,18 @@ generator client {
 }
 
 model User {
-    id            String   @id @default(cuid())
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
-    username      String?
-    email         String   @unique
-    plexUUID      String   @unique
-    plexId        Int      @unique
-    plexAuthToken String
-    thumb         String
-    role          Role     @default(USER)
+    id                               String    @id @default(cuid())
+    createdAt                        DateTime  @default(now())
+    updatedAt                        DateTime  @updatedAt
+    username                         String?
+    email                            String    @unique
+    plexUUID                         String    @unique
+    plexId                           Int       @unique
+    plexAuthToken                    String
+    thumb                            String
+    authenticationChallenge          String?
+    authenticationChallengeExpiresAt DateTime?
+    role                             Role      @default(USER)
 
     authenticators      Authenticator[]
     accounts            LinkedAccount[]
@@ -33,9 +35,11 @@ model Authenticator {
     id                  String      @id @default(cuid())
     createdAt           DateTime    @default(now())
     updatedAt           DateTime    @updatedAt
+    AAGUID              String
     credentialID        Bytes       @unique
     credentialPublicKey Bytes
     counter             Int
+    revoked             Boolean
     transports          Transport[]
 
     user   User?   @relation(fields: [userId], references: [id])
@@ -83,6 +87,7 @@ model Token {
 enum TokenType {
     ACCESS
     REFRESH
+    TEMPORARY
 }
 
 model Server {
@@ -91,6 +96,7 @@ model Server {
     updatedAt DateTime @updatedAt
     uuid      String   @unique
     secret    String   @unique
+    name      String
 
     users     User[]
     scrobbles Scrobble[]

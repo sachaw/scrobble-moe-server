@@ -6,4 +6,7 @@ import { Field, ObjectType } from "type-graphql";
 export class Webhook {
   @Field()
   success: boolean;
+
+  @Field()
+  reason: string;
 }

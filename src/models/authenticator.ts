@@ -1,8 +1,8 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-import { User } from './user';
+import { User } from "./user";
 
 enum Transport {
   USB,
@@ -27,6 +27,9 @@ export class Authenticator {
   updatedAt: Date;
 
   @Field()
+  AAGUID: string;
+
+  @Field()
   credentialID: string; // @TODO: should be of type Bytes
 
   @Field()
@@ -35,9 +38,15 @@ export class Authenticator {
   @Field()
   counter: number;
 
+  @Field()
+  revoked: boolean;
+
   @Field((type) => Transport)
   transports: Transport;
 
   @Field((type) => User)
   user: User;
+
+  @Field((type) => User)
+  revokedBy: User;
 }

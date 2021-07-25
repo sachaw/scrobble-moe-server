@@ -1,27 +1,11 @@
 import "reflect-metadata";
 
-import {
-  Arg,
-  Authorized,
-  Ctx,
-  Field,
-  FieldResolver,
-  InputType,
-  Query,
-  Resolver,
-  Root,
-} from "type-graphql";
+import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { LinkedAccount, Role, Server, User } from "@prisma/client";
 
-import { Context } from "../";
+import { Context } from "../lib/context";
 import { Scrobble } from "./scrobble";
-
-@InputType()
-class ScrobbleUniqueInput {
-  @Field({ nullable: true, description: "ID of user who's scrobbles are to be fetched." })
-  id: string;
-}
 
 @Resolver(Scrobble)
 export class ScrobbleResolver {
@@ -29,7 +13,7 @@ export class ScrobbleResolver {
 
   @FieldResolver()
   async user(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<User> {
-    return ctx.prisma.scrobble
+    return await ctx.prisma.scrobble
       .findUnique({
         where: {
           id: scrobble.id,
@@ -40,7 +24,7 @@ export class ScrobbleResolver {
 
   @FieldResolver()
   async server(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<Server> {
-    return ctx.prisma.scrobble
+    return await ctx.prisma.scrobble
       .findUnique({
         where: {
           id: scrobble.id,
@@ -51,7 +35,7 @@ export class ScrobbleResolver {
 
   @FieldResolver()
   async accounts(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<LinkedAccount[]> {
-    return ctx.prisma.scrobble
+    return await ctx.prisma.scrobble
       .findUnique({
         where: {
           id: scrobble.id,
@@ -60,28 +44,9 @@ export class ScrobbleResolver {
       .accounts();
   }
 
-  @Authorized(Role.ADMIN, Role.USER)
-  @Query((returns) => Scrobble, { nullable: true })
-  async allScrobbles(
-    @Arg("scrobbleUniqueInput") scrobbleUniqueInput: ScrobbleUniqueInput,
-    @Ctx() ctx: Context
-  ) {
-    if (ctx.user.role && ctx.user.role === Role.ADMIN) {
-      return ctx.prisma.scrobble.findMany({
-        where: {
-          user: {
-            id: scrobbleUniqueInput.id ? scrobbleUniqueInput.id : ctx.user.id,
-          },
-        },
-      });
-    } else {
-      return ctx.prisma.scrobble.findMany({
-        where: {
-          user: {
-            id: ctx.user.id,
-          },
-        },
-      });
-    }
+  @Authorized(Role.ADMIN)
+  @Query((returns) => [Scrobble])
+  async allScrobles(@Ctx() ctx: Context) {
+    return await ctx.prisma.scrobble.findMany();
   }
 }
