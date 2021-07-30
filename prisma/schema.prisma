@@ -16,6 +16,7 @@ model User {
     plexUUID                         String    @unique
     plexId                           Int       @unique
     plexAuthToken                    String
+    lastPlexPin                      Int       @unique
     thumb                            String
     authenticationChallenge          String?
     authenticationChallengeExpiresAt DateTime?

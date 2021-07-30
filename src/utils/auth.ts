@@ -1,6 +1,9 @@
 import { sign } from "jsonwebtoken";
+import { AuthChecker } from "type-graphql";
 
 import { PrismaClient, User } from "@prisma/client";
+
+import { Context } from "../lib/context";
 
 export const generateTokens = async (prisma: PrismaClient, user: User) => {
   const accessTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 3); // 3 days
@@ -95,4 +98,18 @@ export const generateTemporaryToken = async (prisma: PrismaClient, user: User) =
     token: token.hashedToken,
     tokenExpires: token.createdAt,
   };
+};
+
+export const authCheck: AuthChecker<Context> = async ({ root, args, context, info }, roles) => {
+  const { user } = context;
+
+  if (!user) {
+    return false;
+  }
+
+  if (roles.find((r) => r === user.role)) {
+    return true;
+  }
+
+  return false;
 };

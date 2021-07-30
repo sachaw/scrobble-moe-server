@@ -4,7 +4,6 @@ import { ApolloServer } from "apollo-server";
 import { config } from "dotenv";
 import { buildSchema } from "type-graphql";
 
-import { authCheck } from "./auth/authCheck";
 import { AuthResolver } from "./auth/authResolver";
 import context from "./lib/context";
 import sentry from "./lib/sentry";
@@ -18,6 +17,7 @@ import { TorrentClientResolver } from "./models/torrentClientResolver";
 import { UserResolver } from "./models/userResolver";
 import sentryPlugin from "./plugins/sentry";
 import sentryPerformancePlugin from "./plugins/sentryPerformance";
+import { authCheck } from "./utils/auth";
 
 config();
 sentry();

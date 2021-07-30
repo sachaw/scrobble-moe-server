@@ -1,6 +1,16 @@
 import "reflect-metadata";
 
-import { Field, InputType, ObjectType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
+
+export enum WebauthnRequestType {
+  ASSERTION,
+  ATTESTATION,
+  UNKNOWN,
+}
+
+registerEnumType(WebauthnRequestType, {
+  name: "WebauthnRequestType",
+});
 
 @ObjectType()
 export class PlexLoginUrl {
@@ -8,13 +18,21 @@ export class PlexLoginUrl {
   url: string;
 
   @Field()
-  token: number;
+  pin: number;
 }
 
 @InputType()
 export class PlexPinInput {
   @Field()
   pin: number;
+}
+
+@ObjectType()
+export class PlexPinCheck {
+  @Field()
+  authenticated: boolean;
+  @Field((type) => WebauthnRequestType)
+  type: WebauthnRequestType;
 }
 
 @ObjectType()
@@ -42,25 +60,21 @@ export class TokenResponse {
 }
 
 @ObjectType()
-export class AssertionOptions {
+export class WebauthnOptions {
   @Field()
-  assertionOptions: string;
-}
-
-@ObjectType()
-export class AttestationOptions {
-  @Field()
-  attestationOptions: string;
+  webauthnOptions: string;
 }
 
 @InputType()
-export class AttestationVerificationInput {
-  @Field()
-  attestationVerificationInput: string;
+export class WebauthnOptionsInput {
+  @Field((type) => WebauthnRequestType)
+  type: WebauthnRequestType;
 }
 
 @InputType()
-export class AssertionVerificationInput {
+export class WebauthnVerificationInput {
+  @Field((type) => WebauthnRequestType)
+  type: WebauthnRequestType;
   @Field()
-  assertionVerificationInput: string;
+  verificationInput: string;
 }
