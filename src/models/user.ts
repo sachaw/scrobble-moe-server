@@ -23,7 +23,7 @@ registerEnumType(Role, {
 
 @ObjectType()
 export class User {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -54,30 +54,30 @@ export class User {
   @Field()
   authenticationChallengeExpiresAt: Date;
 
-  @Field((type) => Role)
+  @Field(() => Role)
   role: Role;
 
-  @Field((type) => [Authenticator])
+  @Field(() => [Authenticator])
   authenticators: Authenticator[];
 
-  @Field((type) => [LinkedAccount])
+  @Field(() => [LinkedAccount])
   accounts: LinkedAccount[];
 
-  @Field((type) => [Token])
+  @Field(() => [Token])
   tokens: Token[];
 
-  @Field((type) => [Session])
+  @Field(() => [Session])
   sessions: Session[];
 
-  @Field((type) => [Scrobble])
+  @Field(() => [Scrobble])
   scrobbles: Scrobble[];
 
-  @Field((type) => [Server])
+  @Field(() => [Server])
   servers: Server[];
 
-  @Field((type) => [TorrentClient])
+  @Field(() => [TorrentClient])
   torrentClients: TorrentClient[];
 
-  @Field((type) => [SeriesSubscription])
+  @Field(() => [SeriesSubscription])
   seriesSubscriptions: SeriesSubscription[];
 }

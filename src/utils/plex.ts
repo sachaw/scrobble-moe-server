@@ -19,7 +19,7 @@ export interface PlexServer {
   };
 }
 
-export const getPlexServers = async (token: string) => {
+export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
   const serversXML = await axios.get(`https://plex.tv/api/servers?X-Plex-Token=${token}`);
-  return (xml2js(serversXML.data, { compact: true }) as any).MediaContainer.Server as PlexServer[];
+  return xml2js(serversXML.data, { compact: true }).MediaContainer.Server as PlexServer[];
 };

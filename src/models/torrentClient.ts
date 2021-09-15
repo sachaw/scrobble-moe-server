@@ -1,8 +1,8 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-import { User } from './user';
+import { User } from "./user";
 
 enum TorrentClientApplication {
   DELUGE,
@@ -17,7 +17,7 @@ registerEnumType(TorrentClientApplication, {
 
 @ObjectType()
 export class TorrentClient {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -26,12 +26,12 @@ export class TorrentClient {
   @Field()
   updatedAt: Date;
 
-  @Field((type) => TorrentClientApplication)
+  @Field(() => TorrentClientApplication)
   client: TorrentClientApplication;
 
   @Field()
   clientVersion: string;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 }

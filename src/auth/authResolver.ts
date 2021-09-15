@@ -5,14 +5,18 @@ import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
 import { Role } from "@prisma/client";
 import {
-  generateAssertionOptions,
-  generateAttestationOptions,
-  VerifiedAssertion,
-  VerifiedAttestation,
-  verifyAssertionResponse,
-  verifyAttestationResponse,
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  VerifiedAuthenticationResponse,
+  VerifiedRegistrationResponse,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import { AuthenticatorTransport } from "@simplewebauthn/typescript-types";
+import {
+  AuthenticationCredentialJSON,
+  AuthenticatorTransport,
+  RegistrationCredentialJSON,
+} from "@simplewebauthn/typescript-types";
 
 import { Context } from "../lib/context";
 import { generateTemporaryToken, generateTokens } from "../utils/auth";
@@ -32,7 +36,6 @@ import {
 export class AuthResolver {
   constructor(private plexOauth: PlexOauth) {
     this.plexOauth = new PlexOauth({
-      origin: "http://localhost:4000",
       clientIdentifier: "7f9de3ba-e12b-11ea-87d0-0242ac130003",
       product: "scrobble.moe",
       device: "Internet",
@@ -50,7 +53,7 @@ export class AuthResolver {
     };
   }
 
-  @Query((returns) => PlexPinCheck)
+  @Query(() => PlexPinCheck)
   async checkPin(
     @Arg("plexPinInput") plexPinInput: PlexPinInput,
     @Ctx() ctx: Context
@@ -105,20 +108,26 @@ export class AuthResolver {
     }
     return {
       authenticated: true,
-      type: potentialUser.authenticators.length
-        ? WebauthnRequestType.ASSERTION
-        : WebauthnRequestType.ATTESTATION,
+      type: potentialUser?.authenticators.length
+        ? WebauthnRequestType.AUTHENTICATION
+        : WebauthnRequestType.REGISTRATION,
     };
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Query((returns) => WebauthnOptions)
+  @Query(() => WebauthnOptions)
   async generateWebauthnOptions(
     @Arg("webauthnOptionsInput") webauthnOptionsInput: WebauthnOptionsInput,
     @Ctx() ctx: Context
   ): Promise<WebauthnOptions> {
+    if (!ctx.user || !ctx.user.username) {
+      throw new AuthenticationError("User not in context");
+    }
+
+    let webauthnOptions: WebauthnOptions;
+
     switch (webauthnOptionsInput.type) {
-      case WebauthnRequestType.ASSERTION:
+      case WebauthnRequestType.AUTHENTICATION: {
         const authenticators = await ctx.prisma.authenticator.findMany({
           where: {
             revoked: false,
@@ -128,9 +137,9 @@ export class AuthResolver {
           },
         });
 
-        return {
+        webauthnOptions = {
           webauthnOptions: JSON.stringify(
-            generateAssertionOptions({
+            generateAuthenticationOptions({
               rpID: process.env.RP_ID,
               allowCredentials: authenticators.map((authenticator) => {
                 return {
@@ -145,7 +154,10 @@ export class AuthResolver {
           ),
         };
 
-      case WebauthnRequestType.ATTESTATION:
+        break;
+      }
+
+      case WebauthnRequestType.REGISTRATION: {
         const revokedAuthenticators = await ctx.prisma.authenticator.findMany({
           where: {
             revoked: true,
@@ -155,7 +167,11 @@ export class AuthResolver {
           },
         });
 
-        const options = generateAttestationOptions({
+        if (!process.env.RP_ORIGIN || !process.env.RP_ID || !process.env.RP_NAME) {
+          throw new Error("Missing RP_ORIGIN, RP_ID or RP_NAME");
+        }
+
+        const options = generateRegistrationOptions({
           rpID: process.env.RP_ID,
           rpName: process.env.RP_NAME,
           userID: ctx.user.id,
@@ -187,10 +203,15 @@ export class AuthResolver {
           },
         });
 
-        return {
+        webauthnOptions = {
           webauthnOptions: JSON.stringify(options),
         };
+
+        break;
+      }
     }
+
+    return webauthnOptions;
   }
 
   @Mutation(() => TemporaryTokenResponse)
@@ -224,27 +245,34 @@ export class AuthResolver {
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Mutation((returns) => TokenResponse)
+  @Mutation(() => TokenResponse)
   async verifyWebauthn(
     @Arg("webauthnVerificationInput")
     webauthnVerificationInput: WebauthnVerificationInput,
     @Ctx() ctx: Context
   ): Promise<TokenResponse> {
     if (
+      !ctx.user ||
       !ctx.user.authenticationChallenge ||
-      ctx.user.authenticationChallengeExpiresAt < new Date()
+      (ctx.user.authenticationChallengeExpiresAt ?? new Date()) < new Date()
     ) {
       throw new AuthenticationError("Invalid or expired challenge");
     }
 
-    const authenticatorData = JSON.parse(webauthnVerificationInput.verificationInput);
+    const authenticatorData = JSON.parse(webauthnVerificationInput.verificationInput) as
+      | RegistrationCredentialJSON
+      | AuthenticationCredentialJSON;
 
-    let verification: VerifiedAttestation | VerifiedAssertion;
+    let verification: VerifiedRegistrationResponse | VerifiedAuthenticationResponse;
+
+    if (!process.env.RP_ORIGIN || !process.env.RP_ID) {
+      throw new Error("Missing RP_ORIGIN or RP_ID");
+    }
 
     switch (webauthnVerificationInput.type) {
-      case WebauthnRequestType.ASSERTION:
-        verification = await verifyAttestationResponse({
-          credential: authenticatorData,
+      case WebauthnRequestType.REGISTRATION: {
+        verification = await verifyRegistrationResponse({
+          credential: authenticatorData as RegistrationCredentialJSON,
           expectedChallenge: ctx.user.authenticationChallenge,
           expectedOrigin: process.env.RP_ORIGIN,
           expectedRPID: process.env.RP_ID,
@@ -254,14 +282,18 @@ export class AuthResolver {
           throw new AuthenticationError("Challenge Failed");
         }
 
+        if (!verification.registrationInfo) {
+          throw new AuthenticationError("Registration data malformed");
+        }
+
         await ctx.prisma.authenticator.create({
           data: {
-            AAGUID: verification.attestationInfo.aaguid,
-            credentialID: verification.attestationInfo.credentialID,
-            credentialPublicKey: verification.attestationInfo.credentialPublicKey,
-            counter: verification.attestationInfo.counter,
+            AAGUID: verification.registrationInfo.aaguid,
+            credentialID: verification.registrationInfo.credentialID,
+            credentialPublicKey: verification.registrationInfo.credentialPublicKey,
+            counter: verification.registrationInfo.counter,
             revoked: false,
-            transports: [], // TODO: Add transports from attestation
+            transports: [], // TODO: Add transports from registration
             user: {
               connect: {
                 id: ctx.user.id,
@@ -273,15 +305,20 @@ export class AuthResolver {
         return await generateTokens(ctx.prisma, ctx.user);
 
         break;
+      }
 
-      case WebauthnRequestType.ATTESTATION:
+      case WebauthnRequestType.AUTHENTICATION: {
         const authenticator = await ctx.prisma.authenticator.findUnique({
           where: {
             credentialID: Buffer.from(authenticatorData.rawId),
           },
         });
 
-        verification = verifyAssertionResponse({
+        if (!authenticator) {
+          throw new AuthenticationError("Authenticator not found");
+        }
+
+        verification = verifyAuthenticationResponse({
           authenticator: {
             counter: authenticator.counter,
             credentialID: authenticator.credentialID,
@@ -290,7 +327,7 @@ export class AuthResolver {
               (transport) => transport.toLowerCase() as AuthenticatorTransport
             ),
           },
-          credential: authenticatorData,
+          credential: authenticatorData as AuthenticationCredentialJSON,
           expectedChallenge: ctx.user.authenticationChallenge,
           expectedOrigin: process.env.RP_ORIGIN,
           expectedRPID: process.env.RP_ID,
@@ -317,6 +354,7 @@ export class AuthResolver {
         return await generateTokens(ctx.prisma, ctx.user);
 
         break;
+      }
     }
   }
 }

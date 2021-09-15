@@ -15,7 +15,7 @@ import {
 } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Scrobble, User } from "@prisma/client";
+import { LinkedAccount as PRISMA_LinkedAccount, Role, Scrobble, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { LinkedAccount } from "./linkedAccount";
@@ -28,8 +28,6 @@ class AddLinkedAccountInput {
 
 @Resolver(LinkedAccount)
 export class LinkedAccountResolver {
-  constructor() {}
-
   @FieldResolver()
   async scrobbles(@Root() linkedAccount: LinkedAccount, @Ctx() ctx: Context): Promise<Scrobble[]> {
     return await ctx.prisma.linkedAccount
@@ -43,27 +41,32 @@ export class LinkedAccountResolver {
 
   @FieldResolver()
   async user(@Root() linkedAccount: LinkedAccount, @Ctx() ctx: Context): Promise<User> {
-    return await ctx.prisma.linkedAccount
+    const user = await ctx.prisma.linkedAccount
       .findUnique({
         where: {
           id: linkedAccount.id,
         },
       })
       .user();
+
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+    return user;
   }
 
   @Authorized(Role.ADMIN)
-  @Query((returns) => [LinkedAccount])
-  async allLinkedAccounts(@Ctx() ctx: Context) {
+  @Query(() => [LinkedAccount])
+  async allLinkedAccounts(@Ctx() ctx: Context): Promise<PRISMA_LinkedAccount[]> {
     return await ctx.prisma.linkedAccount.findMany();
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Mutation((returns) => LinkedAccount, { nullable: true })
+  @Mutation(() => LinkedAccount, { nullable: true })
   async addLinkedAccount(
     @Arg("addLinkedAccountInput") addLinkedAccountInput: AddLinkedAccountInput,
     @Ctx() ctx: Context
-  ) {
+  ): Promise<void> {
     const anilistToken = await axios.post(
       "https://anilist.co/api/v2/oauth/token",
       {

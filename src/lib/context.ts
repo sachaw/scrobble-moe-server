@@ -1,3 +1,7 @@
+/**
+ * Tmp workaround for `ExpressContext` not being exported from apollo-server
+ */
+import { ExpressContext } from "apollo-server-express";
 import { JwtPayload, verify } from "jsonwebtoken";
 
 import { PrismaClient, User } from "@prisma/client";
@@ -16,7 +20,7 @@ export interface Context {
 /**
  * Tmp workaround for `ExpressContext` not being exported from apollo-server
  */
-const context = async (ctx: any): Promise<Context> => {
+const context = async (ctx: ExpressContext): Promise<Context> => {
   const transaction = Sentry.startTransaction({
     op: "gql",
     name: "GraphQLTransaction",
@@ -28,11 +32,12 @@ const context = async (ctx: any): Promise<Context> => {
   if (token.startsWith("Bearer ") && token.length > 7) {
     decoded = verify(token.substring(7), process.env.JWT_SECRET);
     if (decoded) {
-      user = await prisma.user.findUnique({
-        where: {
-          id: decoded.sub as string,
-        },
-      });
+      user =
+        (await prisma.user.findUnique({
+          where: {
+            id: decoded.sub as string,
+          },
+        })) ?? undefined;
     }
   }
 

@@ -17,7 +17,7 @@ registerEnumType(Transport, {
 
 @ObjectType()
 export class Authenticator {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -41,12 +41,12 @@ export class Authenticator {
   @Field()
   revoked: boolean;
 
-  @Field((type) => Transport)
+  @Field(() => Transport)
   transports: Transport;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 
-  @Field((type) => User)
+  @Field(() => User)
   revokedBy: User;
 }

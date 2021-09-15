@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/node";
 
-const sentry = () => {
+const sentry = (): void => {
   return Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV ?? "development",

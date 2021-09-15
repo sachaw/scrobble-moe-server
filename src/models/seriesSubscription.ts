@@ -1,13 +1,13 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType } from "type-graphql";
 
-import { Encoder } from './encoder';
-import { User } from './user';
+import { Encoder } from "./encoder";
+import { User } from "./user";
 
 @ObjectType()
 export class SeriesSubscription {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -19,15 +19,15 @@ export class SeriesSubscription {
   @Field()
   nameIncludes: string;
 
-  @Field((type) => [String])
+  @Field(() => [String])
   nameExcludes: string[];
 
   @Field()
   providerMediaId: string;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 
-  @Field((type) => Encoder)
+  @Field(() => Encoder)
   encoder: Encoder;
 }

@@ -1,8 +1,8 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-import { User } from './user';
+import { User } from "./user";
 
 enum TokenType {
   ACCESS,
@@ -15,7 +15,7 @@ registerEnumType(TokenType, {
 
 @ObjectType()
 export class Token {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -27,9 +27,9 @@ export class Token {
   @Field()
   expiresAt: Date;
 
-  @Field((type) => TokenType)
+  @Field(() => TokenType)
   type: TokenType;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 }

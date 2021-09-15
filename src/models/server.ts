@@ -7,7 +7,7 @@ import { User } from "./user";
 
 @ObjectType()
 export class Server {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -25,10 +25,10 @@ export class Server {
   @Field()
   name: string;
 
-  @Field((type) => [User])
+  @Field(() => [User])
   users: User[];
 
-  @Field((type) => [Scrobble])
+  @Field(() => [Scrobble])
   scrobbles: Scrobble[];
 }
 

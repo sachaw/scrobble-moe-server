@@ -1,12 +1,12 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType } from "type-graphql";
 
-import { User } from './user';
+import { User } from "./user";
 
 @ObjectType()
 export class Session {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -21,6 +21,6 @@ export class Session {
   @Field()
   antiCSRFToken: Date;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 }

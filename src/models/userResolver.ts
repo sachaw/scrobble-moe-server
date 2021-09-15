@@ -12,6 +12,7 @@ import {
   Root,
 } from "type-graphql";
 
+import { NotFoundError } from "@frontendmonster/graphql-utils";
 import {
   Authenticator,
   LinkedAccount,
@@ -22,6 +23,7 @@ import {
   Session,
   Token,
   TorrentClient,
+  User as PRISMA_User,
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
@@ -35,8 +37,6 @@ class UserUniqueInput {
 
 @Resolver(User)
 export class UserResolver {
-  constructor() {}
-
   @FieldResolver()
   async authenticators(@Root() user: User, @Ctx() ctx: Context): Promise<Authenticator[]> {
     return await ctx.prisma.user
@@ -129,26 +129,36 @@ export class UserResolver {
   }
 
   @Authorized(Role.ADMIN)
-  @Query((returns) => [User])
-  async allUsers(@Ctx() ctx: Context) {
+  @Query(() => [User])
+  async allUsers(@Ctx() ctx: Context): Promise<PRISMA_User[]> {
     return await ctx.prisma.user.findMany();
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Query((returns) => User, { nullable: true })
-  async user(@Arg("userUniqueInput") userUniqueInput: UserUniqueInput, @Ctx() ctx: Context) {
+  @Query(() => User, { nullable: true })
+  async user(
+    @Arg("userUniqueInput") userUniqueInput: UserUniqueInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_User> {
+    let user: PRISMA_User | null;
     if (ctx.user.role && ctx.user.role === Role.ADMIN) {
-      return await ctx.prisma.user.findUnique({
+      user = await ctx.prisma.user.findUnique({
         where: {
           id: userUniqueInput.id ? userUniqueInput.id : ctx.user.id,
         },
       });
     } else {
-      return await ctx.prisma.user.findUnique({
+      user = await ctx.prisma.user.findUnique({
         where: {
           id: ctx.user.id,
         },
       });
     }
+
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    return user;
   }
 }

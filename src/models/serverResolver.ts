@@ -14,7 +14,7 @@ import {
 } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Scrobble, User } from "@prisma/client";
+import { Role, Scrobble, Server as PRISMA_Server, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
@@ -28,8 +28,6 @@ class AddServerInput {
 
 @Resolver(Server)
 export class ServerResolver {
-  constructor() {}
-
   @FieldResolver()
   async users(@Root() server: Server, @Ctx() ctx: Context): Promise<User[]> {
     return await ctx.prisma.server
@@ -53,14 +51,14 @@ export class ServerResolver {
   }
 
   @Authorized(Role.ADMIN)
-  @Query((returns) => [Server])
-  async allServers(@Ctx() ctx: Context) {
+  @Query(() => [Server])
+  async allServers(@Ctx() ctx: Context): Promise<PRISMA_Server[]> {
     return await ctx.prisma.server.findMany();
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Query((returns) => [ServerResult], { nullable: true })
-  async getPlexAccoundServers(@Ctx() ctx: Context) {
+  @Query(() => [ServerResult], { nullable: true })
+  async getPlexAccoundServers(@Ctx() ctx: Context): Promise<ServerResult[]> {
     const servers = await getPlexServers(ctx.user.plexAuthToken);
 
     const response: ServerResult[] = servers.map((server) => ({
@@ -82,8 +80,11 @@ export class ServerResolver {
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Mutation((returns) => Server, { nullable: true })
-  async addServer(@Arg("addServerInput") addServerInput: AddServerInput, @Ctx() ctx: Context) {
+  @Mutation(() => Server, { nullable: true })
+  async addServer(
+    @Arg("addServerInput") addServerInput: AddServerInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_Server> {
     const servers = await getPlexServers(ctx.user.plexAuthToken);
 
     const serverToAdd = servers.find(

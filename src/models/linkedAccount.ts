@@ -1,9 +1,9 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-import { Scrobble } from './scrobble';
-import { User } from './user';
+import { Scrobble } from "./scrobble";
+import { User } from "./user";
 
 enum Provider {
   ANILIST,
@@ -16,7 +16,7 @@ registerEnumType(Provider, {
 
 @ObjectType()
 export class LinkedAccount {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -25,7 +25,7 @@ export class LinkedAccount {
   @Field()
   updatedAt: Date;
 
-  @Field((type) => Provider)
+  @Field(() => Provider)
   provider: Provider;
 
   @Field()
@@ -34,9 +34,9 @@ export class LinkedAccount {
   @Field()
   accessTokenExpires: string;
 
-  @Field((type) => [Scrobble])
+  @Field(() => [Scrobble])
   scrobbles: Scrobble[];
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 }

@@ -6,7 +6,7 @@ import { SeriesSubscription } from "./seriesSubscription";
 
 @ObjectType()
 export class Encoder {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -21,6 +21,6 @@ export class Encoder {
   @Field()
   rssURL: string;
 
-  @Field((type) => [SeriesSubscription])
+  @Field(() => [SeriesSubscription])
   userSubscriptions: SeriesSubscription[];
 }

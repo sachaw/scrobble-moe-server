@@ -2,7 +2,8 @@ import "reflect-metadata";
 
 import { Arg, Ctx, Field, InputType, Mutation, Resolver } from "type-graphql";
 
-import { Context } from "../";
+import { Context } from "../lib/context";
+import { Anilist } from "../lib/providers/anilist";
 import { Webhook } from "./webhook";
 
 @InputType()
@@ -46,13 +47,42 @@ export class WebhookResolver {
       };
     }
 
-    const user = server.users.map((user) => user.plexId !== webhookInput.plexId);
+    const user = server.users.find((user) => user.plexId !== webhookInput.plexId);
 
     if (!user) {
       return {
         success: false,
         reason: "User not found",
       };
+    }
+
+    const accounts = await ctx.prisma.linkedAccount.findMany({
+      where: {
+        user: {
+          id: user.id,
+        },
+      },
+    });
+
+    if (!accounts.length) {
+      return {
+        success: false,
+        reason: "No linked providers",
+      };
+    }
+
+    for (const account of accounts) {
+      switch (account.provider) {
+        case "ANILIST": {
+          const anilist = new Anilist(account.userId, account.accessToken);
+          void anilist.setProgress(webhookInput.providerMediaId, webhookInput.episode);
+          break;
+        }
+        case "KITSU": {
+          // const kitsu = new
+          break;
+        }
+      }
     }
 
     return {

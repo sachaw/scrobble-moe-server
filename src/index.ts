@@ -22,7 +22,7 @@ import { authCheck } from "./utils/auth";
 config();
 sentry();
 
-const app = async () => {
+const app = async (): Promise<void> => {
   const schema = await buildSchema({
     resolvers: [
       AuthResolver,
@@ -40,11 +40,14 @@ const app = async () => {
     authChecker: authCheck,
   });
 
-  new ApolloServer({
+  void new ApolloServer({
     schema,
     context: context,
+    cors: {
+      origin: "https://studio.apollographql.com",
+    },
     plugins: [sentryPlugin, sentryPerformancePlugin],
   }).listen({ port: 4000 }, () => console.log(`🚀 Server ready`));
 };
 
-app();
+void app();

@@ -10,3 +10,5 @@ add descriptions to graphql queries and fields
 
 remove old tokens:
     - temporary, when generating a new one, remove any old ones
+
+setup eslint config for server and client

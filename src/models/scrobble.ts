@@ -1,10 +1,10 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-import { LinkedAccount } from './linkedAccount';
-import { Server } from './server';
-import { User } from './user';
+import { LinkedAccount } from "./linkedAccount";
+import { Server } from "./server";
+import { User } from "./user";
 
 enum ScrobbleStatus {
   IGNORED,
@@ -18,7 +18,7 @@ registerEnumType(ScrobbleStatus, {
 
 @ObjectType()
 export class Scrobble {
-  @Field((type) => ID)
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -27,7 +27,7 @@ export class Scrobble {
   @Field()
   updatedAt: Date;
 
-  @Field((type) => ScrobbleStatus)
+  @Field(() => ScrobbleStatus)
   status: ScrobbleStatus;
 
   @Field()
@@ -36,12 +36,12 @@ export class Scrobble {
   @Field()
   episode: number;
 
-  @Field((type) => User)
+  @Field(() => User)
   user: User;
 
-  @Field((type) => Server)
+  @Field(() => Server)
   server: Server;
 
-  @Field((type) => [LinkedAccount])
+  @Field(() => [LinkedAccount])
   accounts: LinkedAccount[];
 }

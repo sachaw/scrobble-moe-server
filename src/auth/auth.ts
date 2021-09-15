@@ -3,8 +3,8 @@ import "reflect-metadata";
 import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 export enum WebauthnRequestType {
-  ASSERTION,
-  ATTESTATION,
+  AUTHENTICATION,
+  REGISTRATION,
   UNKNOWN,
 }
 
@@ -31,7 +31,7 @@ export class PlexPinInput {
 export class PlexPinCheck {
   @Field()
   authenticated: boolean;
-  @Field((type) => WebauthnRequestType)
+  @Field(() => WebauthnRequestType)
   type: WebauthnRequestType;
 }
 
@@ -67,13 +67,13 @@ export class WebauthnOptions {
 
 @InputType()
 export class WebauthnOptionsInput {
-  @Field((type) => WebauthnRequestType)
+  @Field(() => WebauthnRequestType)
   type: WebauthnRequestType;
 }
 
 @InputType()
 export class WebauthnVerificationInput {
-  @Field((type) => WebauthnRequestType)
+  @Field(() => WebauthnRequestType)
   type: WebauthnRequestType;
   @Field()
   verificationInput: string;

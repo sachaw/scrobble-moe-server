@@ -2,24 +2,34 @@ import "reflect-metadata";
 
 import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
-import { Encoder, Role, User } from "@prisma/client";
+import { NotFoundError } from "@frontendmonster/graphql-utils";
+import {
+  Encoder,
+  Role,
+  SeriesSubscription as PRISMA_SeriesSubscription,
+  User,
+} from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { SeriesSubscription } from "./seriesSubscription";
 
 @Resolver(SeriesSubscription)
 export class SeriesSubscriptionResolver {
-  constructor() {}
-
   @FieldResolver()
   async user(@Root() seriesSubscription: SeriesSubscription, @Ctx() ctx: Context): Promise<User> {
-    return await ctx.prisma.seriesSubscription
+    const user = await ctx.prisma.seriesSubscription
       .findUnique({
         where: {
           id: seriesSubscription.id,
         },
       })
       .user();
+
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    return user;
   }
 
   @FieldResolver()
@@ -27,18 +37,24 @@ export class SeriesSubscriptionResolver {
     @Root() seriesSubscription: SeriesSubscription,
     @Ctx() ctx: Context
   ): Promise<Encoder> {
-    return await ctx.prisma.seriesSubscription
+    const encoder = await ctx.prisma.seriesSubscription
       .findUnique({
         where: {
           id: seriesSubscription.id,
         },
       })
       .encoder();
+
+    if (!encoder) {
+      throw new NotFoundError("Encoder not found");
+    }
+
+    return encoder;
   }
 
   @Authorized(Role.ADMIN)
-  @Query((returns) => [SeriesSubscription])
-  async allSeriesSubscriptions(@Ctx() ctx: Context) {
+  @Query(() => [SeriesSubscription])
+  async allSeriesSubscriptions(@Ctx() ctx: Context): Promise<PRISMA_SeriesSubscription[]> {
     return await ctx.prisma.seriesSubscription.findMany();
   }
 }
