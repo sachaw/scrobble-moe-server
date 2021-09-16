@@ -19,8 +19,8 @@ specifiers:
   apollo-server-plugin-base: ^3.2.0
   axios: ^0.21.4
   babel-plugin-module-resolver: ^4.1.0
+  base64url: ^3.0.1
   class-validator: ^0.13.1
-  dotenv: ^10.0.0
   eslint: ^7.32.0
   eslint-config-prettier: ^8.3.0
   eslint-import-resolver-babel-module: ^5.3.1
@@ -38,10 +38,12 @@ specifiers:
   prettier: ^2.4.0
   prisma: ^3.0.2
   reflect-metadata: ^0.1.13
+  ts-dotenv: ^0.8.3
   ts-node-dev: ^1.1.8
   tslib: ^2.3.1
   type-graphql: ^1.1.1
   typescript: ^4.4.3
+  universal-base64: ^2.1.0
   xml-js: ^1.6.11
 
 dependencies:
@@ -54,8 +56,8 @@ dependencies:
   apollo-server: 3.3.0_graphql@15.5.3
   apollo-server-plugin-base: 3.2.0_graphql@15.5.3
   axios: 0.21.4
+  base64url: 3.0.1
   class-validator: 0.13.1
-  dotenv: 10.0.0
   graphql: 15.5.3
   graphql-fields: 2.0.3
   graphql-request: 3.5.0_graphql@15.5.3
@@ -63,8 +65,10 @@ dependencies:
   jsonwebtoken: 8.5.1
   plex-oauth: 2.0.1
   reflect-metadata: 0.1.13
+  ts-dotenv: 0.8.3
   tslib: 2.3.1
   type-graphql: 1.1.1_49f3bee33d617f67c328ff0b9c50ec75
+  universal-base64: 2.1.0
   xml-js: 1.6.11
 
 devDependencies:
@@ -1492,11 +1496,6 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
-
-  /dotenv/10.0.0:
-    resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
-    engines: {node: '>=10'}
-    dev: false
 
   /dynamic-dedupe/0.3.0:
     resolution: {integrity: sha1-BuRMIj9eTpTXjvnbI6ZRXOL5YqE=}
@@ -3410,6 +3409,10 @@ packages:
     hasBin: true
     dev: true
 
+  /ts-dotenv/0.8.3:
+    resolution: {integrity: sha512-S1wYF0j0C02SaV+escizhCcq0bC58as87cW7M+9zYnEhlgihGEU/Sl+CoshT2VU6Gp7wSrsoaOgt5OSBgsVaVA==}
+    dev: false
+
   /ts-node-dev/1.1.8_typescript@4.4.3:
     resolution: {integrity: sha512-Q/m3vEwzYwLZKmV6/0VlFxcZzVV/xcgOt+Tx/VjaaRHyiBcFlV0541yrT09QjzzCxlDZ34OzKjrFAynlmtflEg==}
     engines: {node: '>=0.8.0'}
@@ -3537,6 +3540,10 @@ packages:
       has-symbols: 1.0.2
       which-boxed-primitive: 1.0.2
     dev: true
+
+  /universal-base64/2.1.0:
+    resolution: {integrity: sha512-WeOkACVnIXJZr/qlv7++Rl1zuZOHN96v2yS5oleUuv8eJOs5j9M5U3xQEIoWqn1OzIuIcgw0fswxWnUVGDfW6g==}
+    dev: false
 
   /unpipe/1.0.0:
     resolution: {integrity: sha1-sr9O6FFKrmFltIF4KdIbLvSZBOw=}

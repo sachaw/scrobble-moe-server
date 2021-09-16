@@ -3,8 +3,9 @@ import { AuthChecker } from "type-graphql";
 
 import { PrismaClient, User } from "@prisma/client";
 
-import { TemporaryTokenResponse, TokenResponse } from "../auth/auth";
+import { TokenResponse } from "../auth/auth";
 import { Context } from "../lib/context";
+import { env } from "../lib/env";
 
 export const generateTokens = async (prisma: PrismaClient, user: User): Promise<TokenResponse> => {
   const accessTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 3); // 3 days
@@ -34,7 +35,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
           sub: user.id,
           type: "access",
         },
-        process.env.JWT_SECRET
+        env.JWT_SECRET
       ),
       expiresAt: accessTokenExpires,
     },
@@ -50,7 +51,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
           sub: user.id,
           type: "refresh",
         },
-        process.env.JWT_SECRET
+        env.JWT_SECRET
       ),
       expiresAt: refreshTokenExpires,
     },
@@ -64,45 +65,45 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
   };
 };
 
-export const generateTemporaryToken = async (
-  prisma: PrismaClient,
-  user: User
-): Promise<TemporaryTokenResponse> => {
-  const tokenExpires = new Date(new Date().getTime() + 1000 * 60 * 1); // 1 minute
+// export const generateTemporaryToken = async (
+//   prisma: PrismaClient,
+//   user: User
+// ): Promise<TemporaryTokenResponse> => {
+//   const tokenExpires = new Date(new Date().getTime() + 1000 * 60 * 1); // 1 minute
 
-  // remove old temporary tokens
-  await prisma.token.deleteMany({
-    where: {
-      AND: {
-        user: {
-          id: user.id,
-        },
-        type: "TEMPORARY",
-      },
-    },
-  });
+//   // remove old temporary tokens
+//   await prisma.token.deleteMany({
+//     where: {
+//       AND: {
+//         user: {
+//           id: user.id,
+//         },
+//         type: "TEMPORARY",
+//       },
+//     },
+//   });
 
-  const token = await prisma.token.create({
-    data: {
-      userId: user.id,
-      type: "TEMPORARY",
-      hashedToken: sign(
-        {
-          exp: tokenExpires.getTime(),
-          sub: user.id,
-          type: "temporary",
-        },
-        process.env.JWT_SECRET
-      ),
-      expiresAt: tokenExpires,
-    },
-  });
+//   const token = await prisma.token.create({
+//     data: {
+//       userId: user.id,
+//       type: "TEMPORARY",
+//       hashedToken: sign(
+//         {
+//           exp: tokenExpires.getTime(),
+//           sub: user.id,
+//           type: "temporary",
+//         },
+//         env.JWT_SECRET
+//       ),
+//       expiresAt: tokenExpires,
+//     },
+//   });
 
-  return {
-    token: token.hashedToken,
-    tokenExpires: token.createdAt,
-  };
-};
+//   return {
+//     token: token.hashedToken,
+//     tokenExpires: token.createdAt,
+//   };
+// };
 
 export const authCheck: AuthChecker<Context> = ({ root, args, context, info }, roles) => {
   const { user } = context;

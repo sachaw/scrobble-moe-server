@@ -1,11 +1,13 @@
 import "reflect-metadata";
 
 import { ApolloServer } from "apollo-server";
-import { config } from "dotenv";
 import { buildSchema } from "type-graphql";
+
+import { MetadataService } from "@simplewebauthn/server";
 
 import { AuthResolver } from "./auth/authResolver";
 import context from "./lib/context";
+import { loadEnv } from "./lib/env";
 import sentry from "./lib/sentry";
 import { AuthenticatorResolver } from "./models/authenticatorResolver";
 import { EncoderResolver } from "./models/encoderResolver";
@@ -19,8 +21,11 @@ import sentryPlugin from "./plugins/sentry";
 import sentryPerformancePlugin from "./plugins/sentryPerformance";
 import { authCheck } from "./utils/auth";
 
-config();
+loadEnv();
 sentry();
+void MetadataService.initialize().then(() => {
+  console.log("🔐 MetadataService initialized");
+});
 
 const app = async (): Promise<void> => {
   const schema = await buildSchema({
@@ -44,7 +49,7 @@ const app = async (): Promise<void> => {
     schema,
     context: context,
     cors: {
-      origin: "https://studio.apollographql.com",
+      origin: "*",
     },
     plugins: [sentryPlugin, sentryPerformancePlugin],
   }).listen({ port: 4000 }, () => console.log(`🚀 Server ready`));

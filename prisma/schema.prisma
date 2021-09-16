@@ -11,12 +11,10 @@ model User {
     id                               String    @id @default(cuid())
     createdAt                        DateTime  @default(now())
     updatedAt                        DateTime  @updatedAt
-    username                         String?
+    username                         String
     email                            String    @unique
-    plexUUID                         String    @unique
     plexId                           Int       @unique
     plexAuthToken                    String
-    lastPlexPin                      Int       @unique
     thumb                            String
     authenticationChallenge          String?
     authenticationChallengeExpiresAt DateTime?

@@ -13,8 +13,8 @@
     "apollo-server": "^3.3.0",
     "apollo-server-plugin-base": "^3.2.0",
     "axios": "^0.21.4",
+    "base64url": "^3.0.1",
     "class-validator": "^0.13.1",
-    "dotenv": "^10.0.0",
     "graphql": "^15.5.3",
     "graphql-fields": "^2.0.3",
     "graphql-request": "^3.5.0",
@@ -22,8 +22,10 @@
     "jsonwebtoken": "^8.5.1",
     "plex-oauth": "^2.0.1",
     "reflect-metadata": "^0.1.13",
+    "ts-dotenv": "^0.8.3",
     "tslib": "^2.3.1",
     "type-graphql": "^1.1.1",
+    "universal-base64": "^2.1.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {

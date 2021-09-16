@@ -2,46 +2,37 @@ import "reflect-metadata";
 
 import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-export enum WebauthnRequestType {
+export enum AuthenticationType {
   AUTHENTICATION,
   REGISTRATION,
-  UNKNOWN,
 }
 
-registerEnumType(WebauthnRequestType, {
-  name: "WebauthnRequestType",
+registerEnumType(AuthenticationType, {
+  name: "AuthenticationType",
 });
 
-@ObjectType()
-export class PlexLoginUrl {
+@InputType()
+export class AuthenticationInput {
   @Field()
-  url: string;
+  plexToken: string;
+}
 
+@ObjectType()
+export class AuthResponse {
+  @Field(() => AuthenticationType)
+  type: AuthenticationType;
   @Field()
-  pin: number;
+  webauthnOptions: string;
 }
 
 @InputType()
-export class PlexPinInput {
+export class WebauthnInput {
+  @Field(() => AuthenticationType)
+  type: AuthenticationType;
   @Field()
-  pin: number;
-}
-
-@ObjectType()
-export class PlexPinCheck {
+  verification: string;
   @Field()
-  authenticated: boolean;
-  @Field(() => WebauthnRequestType)
-  type: WebauthnRequestType;
-}
-
-@ObjectType()
-export class TemporaryTokenResponse {
-  @Field()
-  token: string;
-
-  @Field()
-  tokenExpires: Date;
+  plexToken: string;
 }
 
 @ObjectType()
@@ -57,24 +48,4 @@ export class TokenResponse {
 
   @Field()
   refreshTokenExpires: Date;
-}
-
-@ObjectType()
-export class WebauthnOptions {
-  @Field()
-  webauthnOptions: string;
-}
-
-@InputType()
-export class WebauthnOptionsInput {
-  @Field(() => WebauthnRequestType)
-  type: WebauthnRequestType;
-}
-
-@InputType()
-export class WebauthnVerificationInput {
-  @Field(() => WebauthnRequestType)
-  type: WebauthnRequestType;
-  @Field()
-  verificationInput: string;
 }

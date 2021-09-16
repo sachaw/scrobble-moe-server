@@ -18,6 +18,7 @@ import { NotFoundError } from "@frontendmonster/graphql-utils";
 import { LinkedAccount as PRISMA_LinkedAccount, Role, Scrobble, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
+import { env } from "../lib/env";
 import { LinkedAccount } from "./linkedAccount";
 
 @InputType()
@@ -71,8 +72,8 @@ export class LinkedAccountResolver {
       "https://anilist.co/api/v2/oauth/token",
       {
         grant_type: "authorization_code",
-        client_id: process.env.ANILIST_ID,
-        client_secret: process.env.ANILIST_SECRET,
+        client_id: env.ANILIST_ID,
+        client_secret: env.ANILIST_SECRET,
         redirect_uri: "",
         code: addLinkedAccountInput.code,
       },

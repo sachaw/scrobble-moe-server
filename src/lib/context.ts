@@ -8,6 +8,7 @@ import { PrismaClient, User } from "@prisma/client";
 import * as Sentry from "@sentry/node";
 import { Transaction } from "@sentry/types";
 
+import { env } from "./env";
 import prisma from "./prisma";
 
 export interface Context {
@@ -30,7 +31,7 @@ const context = async (ctx: ExpressContext): Promise<Context> => {
   let decoded: string | JwtPayload | undefined;
 
   if (token.startsWith("Bearer ") && token.length > 7) {
-    decoded = verify(token.substring(7), process.env.JWT_SECRET);
+    decoded = verify(token.substring(7), env.JWT_SECRET);
     if (decoded) {
       user =
         (await prisma.user.findUnique({

@@ -1,281 +1,177 @@
-import axios from "axios";
-import { PlexOauth } from "plex-oauth";
-import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import base64url from "base64url";
+import { Arg, Ctx, Mutation } from "type-graphql";
+import { decode, encode } from "universal-base64";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
-import { Role } from "@prisma/client";
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
-  VerifiedAuthenticationResponse,
-  VerifiedRegistrationResponse,
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
 import {
   AuthenticationCredentialJSON,
   AuthenticatorTransport,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
   RegistrationCredentialJSON,
 } from "@simplewebauthn/typescript-types";
 
 import { Context } from "../lib/context";
-import { generateTemporaryToken, generateTokens } from "../utils/auth";
+import { env } from "../lib/env";
+import { generateTokens } from "../utils/auth";
 import {
-  PlexLoginUrl,
-  PlexPinCheck,
-  PlexPinInput,
-  TemporaryTokenResponse,
+  AuthenticationInput,
+  AuthenticationType,
+  AuthResponse,
   TokenResponse,
-  WebauthnOptions,
-  WebauthnOptionsInput,
-  WebauthnRequestType,
-  WebauthnVerificationInput,
+  WebauthnInput,
 } from "./auth";
+import { getPlexAccount } from "./utils";
+import { Transport } from ".pnpm/@prisma+client@3.0.2_prisma@3.0.2/node_modules/.prisma/client";
 
-@Resolver(PlexLoginUrl)
 export class AuthResolver {
-  constructor(private plexOauth: PlexOauth) {
-    this.plexOauth = new PlexOauth({
-      clientIdentifier: "7f9de3ba-e12b-11ea-87d0-0242ac130003",
-      product: "scrobble.moe",
-      device: "Internet",
-      version: "1",
-      forwardUrl: "",
-    });
-  }
+  @Mutation(() => AuthResponse)
+  async authenticate(
+    @Ctx() ctx: Context,
+    @Arg("authenticationInput")
+    authenticationInput: AuthenticationInput
+  ): Promise<AuthResponse> {
+    const plexAccountData = await getPlexAccount(authenticationInput.plexToken);
 
-  @Query(() => PlexLoginUrl)
-  async plexLoginURL(): Promise<PlexLoginUrl> {
-    const [url, pin] = await this.plexOauth.requestHostedLoginURL();
-    return {
-      url,
-      pin,
-    };
-  }
-
-  @Query(() => PlexPinCheck)
-  async checkPin(
-    @Arg("plexPinInput") plexPinInput: PlexPinInput,
-    @Ctx() ctx: Context
-  ): Promise<PlexPinCheck> {
-    const potentialUser = await ctx.prisma.user.findUnique({
+    const user = await ctx.prisma.user.upsert({
       where: {
-        lastPlexPin: plexPinInput.pin,
+        plexUUID: plexAccountData.user.uuid,
       },
       include: {
         authenticators: true,
       },
-    });
-
-    if (!potentialUser) {
-      const token = await this.plexOauth.checkForAuthToken(plexPinInput.pin);
-
-      if (!token) {
-        return {
-          authenticated: false,
-          type: WebauthnRequestType.UNKNOWN,
-        };
-      }
-
-      const response = await axios.get("https://plex.tv/users/account.json", {
-        headers: {
-          "X-Plex-Token": token ?? "",
-          Accept: "application/json",
-        },
-      });
-
-      await ctx.prisma.user.upsert({
-        where: {
-          plexUUID: response.data.user.uuid,
-        },
-        update: {
-          email: response.data.user.email,
-          plexAuthToken: token,
-          thumb: response.data.user.thumb,
-          username: response.data.user.username,
-          lastPlexPin: plexPinInput.pin,
-        },
-        create: {
-          email: response.data.user.email,
-          plexAuthToken: token,
-          plexId: response.data.user.id,
-          plexUUID: response.data.user.uuid,
-          thumb: response.data.user.thumb,
-          username: response.data.user.username,
-          lastPlexPin: plexPinInput.pin,
-        },
-      });
-    }
-    return {
-      authenticated: true,
-      type: potentialUser?.authenticators.length
-        ? WebauthnRequestType.AUTHENTICATION
-        : WebauthnRequestType.REGISTRATION,
-    };
-  }
-
-  @Authorized(Role.ADMIN, Role.USER)
-  @Query(() => WebauthnOptions)
-  async generateWebauthnOptions(
-    @Arg("webauthnOptionsInput") webauthnOptionsInput: WebauthnOptionsInput,
-    @Ctx() ctx: Context
-  ): Promise<WebauthnOptions> {
-    if (!ctx.user || !ctx.user.username) {
-      throw new AuthenticationError("User not in context");
-    }
-
-    let webauthnOptions: WebauthnOptions;
-
-    switch (webauthnOptionsInput.type) {
-      case WebauthnRequestType.AUTHENTICATION: {
-        const authenticators = await ctx.prisma.authenticator.findMany({
-          where: {
-            revoked: false,
-            user: {
-              id: ctx.user.id,
-            },
-          },
-        });
-
-        webauthnOptions = {
-          webauthnOptions: JSON.stringify(
-            generateAuthenticationOptions({
-              rpID: process.env.RP_ID,
-              allowCredentials: authenticators.map((authenticator) => {
-                return {
-                  id: authenticator.credentialID,
-                  transports: authenticator.transports.map(
-                    (transport) => transport.toLowerCase() as AuthenticatorTransport
-                  ),
-                  type: "public-key",
-                };
-              }),
-            })
-          ),
-        };
-
-        break;
-      }
-
-      case WebauthnRequestType.REGISTRATION: {
-        const revokedAuthenticators = await ctx.prisma.authenticator.findMany({
-          where: {
-            revoked: true,
-            user: {
-              id: ctx.user.id,
-            },
-          },
-        });
-
-        if (!process.env.RP_ORIGIN || !process.env.RP_ID || !process.env.RP_NAME) {
-          throw new Error("Missing RP_ORIGIN, RP_ID or RP_NAME");
-        }
-
-        const options = generateRegistrationOptions({
-          rpID: process.env.RP_ID,
-          rpName: process.env.RP_NAME,
-          userID: ctx.user.id,
-          userName: ctx.user.username,
-          attestationType: "direct",
-          authenticatorSelection: {
-            requireResidentKey: true,
-          },
-          excludeCredentials: revokedAuthenticators.map((authenticator) => {
-            return {
-              id: authenticator.credentialID,
-              transports: authenticator.transports.map(
-                (transport) => transport.toLowerCase() as AuthenticatorTransport
-              ),
-              type: "public-key",
-            };
-          }),
-        });
-
-        const challengeExpires = new Date(new Date().getTime() + 1000 * 60 * 1); // 1 minute
-
-        await ctx.prisma.user.update({
-          data: {
-            authenticationChallenge: options.challenge,
-            authenticationChallengeExpiresAt: challengeExpires,
-          },
-          where: {
-            id: ctx.user.id,
-          },
-        });
-
-        webauthnOptions = {
-          webauthnOptions: JSON.stringify(options),
-        };
-
-        break;
-      }
-    }
-
-    return webauthnOptions;
-  }
-
-  @Mutation(() => TemporaryTokenResponse)
-  async plexPinSignin(
-    @Ctx() ctx: Context,
-    @Arg("plexPinInput")
-    plexPinInput: PlexPinInput
-  ): Promise<TemporaryTokenResponse> {
-    const user = await ctx.prisma.user.findUnique({
-      where: {
-        lastPlexPin: plexPinInput.pin,
+      update: {
+        email: plexAccountData.user.email,
+        plexAuthToken: authenticationInput.plexToken,
+        thumb: plexAccountData.user.thumb,
+        username: plexAccountData.user.username,
+      },
+      create: {
+        email: plexAccountData.user.email,
+        plexAuthToken: authenticationInput.plexToken,
+        plexId: plexAccountData.user.id,
+        plexUUID: plexAccountData.user.uuid,
+        thumb: plexAccountData.user.thumb,
+        username: plexAccountData.user.username,
       },
     });
 
-    if (!user) {
-      throw new AuthenticationError(
-        "Pin does not exist, please generate and authenticate pin first"
-      );
+    let webauthnOptions:
+      | PublicKeyCredentialCreationOptionsJSON
+      | PublicKeyCredentialRequestOptionsJSON;
+
+    if (user.authenticators.length === 0) {
+      // const revokedAuthenticators = await ctx.prisma.authenticator.findMany({
+      //   where: {
+      //     revoked: true,
+      //     user: {
+      //       id: user.id,
+      //     },
+      //   },
+      // });
+
+      webauthnOptions = generateRegistrationOptions({
+        rpID: env.RP_ID,
+        rpName: env.RP_NAME,
+        userID: user.id,
+        userName: user.username,
+        attestationType: "direct",
+        authenticatorSelection: {
+          requireResidentKey: true,
+        },
+        // excludeCredentials: revokedAuthenticators.map((authenticator) => {
+        //   return {
+        //     id: authenticator.credentialID,
+        //     transports: authenticator.transports.map(
+        //       (transport) => transport.toLowerCase() as AuthenticatorTransport
+        //     ),
+        //     type: "public-key",
+        //   };
+        // }),
+      });
+    } else {
+      const authenticators = await ctx.prisma.authenticator.findMany({
+        where: {
+          revoked: false,
+          user: {
+            id: user.id,
+          },
+        },
+      });
+
+      webauthnOptions = generateAuthenticationOptions({
+        rpID: env.RP_ID,
+        userVerification: "required",
+        allowCredentials: authenticators.map((authenticator) => {
+          return {
+            id: authenticator.credentialID,
+            transports: authenticator.transports.map(
+              (transport) => transport.toLowerCase() as AuthenticatorTransport
+            ),
+            type: "public-key",
+          };
+        }),
+      });
     }
+
+    const challengeExpires = new Date(new Date().getTime() + 1000 * 60 * 1);
 
     await ctx.prisma.user.update({
       data: {
-        lastPlexPin: undefined,
+        authenticationChallenge: webauthnOptions.challenge,
+        authenticationChallengeExpiresAt: challengeExpires,
       },
       where: {
         id: user.id,
       },
     });
 
-    return await generateTemporaryToken(ctx.prisma, user);
+    return {
+      type: user.authenticators.length
+        ? AuthenticationType.AUTHENTICATION
+        : AuthenticationType.REGISTRATION,
+      webauthnOptions: encode(JSON.stringify(webauthnOptions)),
+    };
   }
 
-  @Authorized(Role.ADMIN, Role.USER)
   @Mutation(() => TokenResponse)
-  async verifyWebauthn(
-    @Arg("webauthnVerificationInput")
-    webauthnVerificationInput: WebauthnVerificationInput,
+  async webauthn(
+    @Arg("WebauthnInput")
+    webauthnInput: WebauthnInput,
     @Ctx() ctx: Context
   ): Promise<TokenResponse> {
-    if (
-      !ctx.user ||
-      !ctx.user.authenticationChallenge ||
-      (ctx.user.authenticationChallengeExpiresAt ?? new Date()) < new Date()
-    ) {
-      throw new AuthenticationError("Invalid or expired challenge");
+    const plexAccountData = await getPlexAccount(webauthnInput.plexToken);
+
+    const user = await ctx.prisma.user.findUnique({
+      where: {
+        plexId: plexAccountData.user.id,
+      },
+    });
+
+    if (!user) {
+      throw new AuthenticationError("User not found");
     }
 
-    const authenticatorData = JSON.parse(webauthnVerificationInput.verificationInput) as
-      | RegistrationCredentialJSON
-      | AuthenticationCredentialJSON;
-
-    let verification: VerifiedRegistrationResponse | VerifiedAuthenticationResponse;
-
-    if (!process.env.RP_ORIGIN || !process.env.RP_ID) {
-      throw new Error("Missing RP_ORIGIN or RP_ID");
+    if (!user.authenticationChallenge) {
+      throw new AuthenticationError("Challenge has not been generated yet.");
     }
 
-    switch (webauthnVerificationInput.type) {
-      case WebauthnRequestType.REGISTRATION: {
-        verification = await verifyRegistrationResponse({
-          credential: authenticatorData as RegistrationCredentialJSON,
-          expectedChallenge: ctx.user.authenticationChallenge,
-          expectedOrigin: process.env.RP_ORIGIN,
-          expectedRPID: process.env.RP_ID,
+    switch (webauthnInput.type) {
+      case AuthenticationType.REGISTRATION: {
+        const authenticatorData = JSON.parse(
+          decode(webauthnInput.verification)
+        ) as RegistrationCredentialJSON;
+        const verification = await verifyRegistrationResponse({
+          credential: authenticatorData,
+          expectedChallenge: user.authenticationChallenge,
+          expectedOrigin: env.RP_ORIGIN,
+          expectedRPID: env.RP_ID,
         });
 
         if (!verification.verified) {
@@ -293,24 +189,31 @@ export class AuthResolver {
             credentialPublicKey: verification.registrationInfo.credentialPublicKey,
             counter: verification.registrationInfo.counter,
             revoked: false,
-            transports: [], // TODO: Add transports from registration
+            transports:
+              authenticatorData.transports?.map((transport) => {
+                /**
+                 * @todo may need to be converted to uppercase or select enum
+                 */
+                return transport as Transport;
+              }) ?? [],
             user: {
               connect: {
-                id: ctx.user.id,
+                id: user.id,
               },
             },
           },
         });
 
-        return await generateTokens(ctx.prisma, ctx.user);
-
-        break;
+        return await generateTokens(ctx.prisma, user);
       }
 
-      case WebauthnRequestType.AUTHENTICATION: {
+      case AuthenticationType.AUTHENTICATION: {
+        const authenticatorData = JSON.parse(
+          decode(webauthnInput.verification)
+        ) as AuthenticationCredentialJSON;
         const authenticator = await ctx.prisma.authenticator.findUnique({
           where: {
-            credentialID: Buffer.from(authenticatorData.rawId),
+            credentialID: base64url.toBuffer(authenticatorData.rawId),
           },
         });
 
@@ -318,7 +221,7 @@ export class AuthResolver {
           throw new AuthenticationError("Authenticator not found");
         }
 
-        verification = verifyAuthenticationResponse({
+        const verification = verifyAuthenticationResponse({
           authenticator: {
             counter: authenticator.counter,
             credentialID: authenticator.credentialID,
@@ -327,33 +230,26 @@ export class AuthResolver {
               (transport) => transport.toLowerCase() as AuthenticatorTransport
             ),
           },
-          credential: authenticatorData as AuthenticationCredentialJSON,
-          expectedChallenge: ctx.user.authenticationChallenge,
-          expectedOrigin: process.env.RP_ORIGIN,
-          expectedRPID: process.env.RP_ID,
+          credential: authenticatorData,
+          expectedChallenge: user.authenticationChallenge,
+          expectedOrigin: env.RP_ORIGIN,
+          expectedRPID: env.RP_ID,
         });
 
         if (!verification.verified) {
           throw new AuthenticationError("Challenge Failed");
         }
 
-        console.log(verification);
+        await ctx.prisma.authenticator.update({
+          where: {
+            credentialID: authenticator.credentialID,
+          },
+          data: {
+            counter: verification.authenticationInfo.newCounter,
+          },
+        });
 
-        // await ctx.prisma.authenticator.update({
-        //   data: {
-        //     counter: authenticatorData.response.
-        //   }
-        // })
-
-        console.log(authenticator);
-
-        console.log(authenticatorData);
-
-        //upsert with new counter
-
-        return await generateTokens(ctx.prisma, ctx.user);
-
-        break;
+        return await generateTokens(ctx.prisma, user);
       }
     }
   }
