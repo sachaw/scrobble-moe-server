@@ -86,7 +86,6 @@ model Token {
 enum TokenType {
     ACCESS
     REFRESH
-    TEMPORARY
 }
 
 model Server {

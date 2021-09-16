@@ -1,7 +1,7 @@
 import "reflect-metadata";
 
 import { IsEmail } from "class-validator";
-import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
+import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import { Authenticator } from "./authenticator";
 import { LinkedAccount } from "./linkedAccount";
@@ -21,6 +21,12 @@ registerEnumType(Role, {
   name: "Role",
 });
 
+@InputType()
+export class UserUniqueInput {
+  @Field({ nullable: true })
+  id: string;
+}
+
 @ObjectType()
 export class User {
   @Field(() => ID)
@@ -32,15 +38,12 @@ export class User {
   @Field()
   updatedAt: Date;
 
-  @Field({ nullable: true })
-  username?: string;
+  @Field()
+  username: string;
 
   @Field()
   @IsEmail()
   email: string;
-
-  @Field()
-  plexUUID: string;
 
   @Field()
   plexId: string;

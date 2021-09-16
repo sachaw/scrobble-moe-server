@@ -1,16 +1,6 @@
 import "reflect-metadata";
 
-import {
-  Arg,
-  Authorized,
-  Ctx,
-  Field,
-  FieldResolver,
-  InputType,
-  Query,
-  Resolver,
-  Root,
-} from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import {
@@ -27,13 +17,7 @@ import {
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { User } from "./user";
-
-@InputType()
-class UserUniqueInput {
-  @Field({ nullable: true })
-  id: string;
-}
+import { User, UserUniqueInput } from "./user";
 
 @Resolver(User)
 export class UserResolver {

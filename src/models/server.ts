@@ -1,9 +1,15 @@
 import "reflect-metadata";
 
-import { Field, ID, ObjectType } from "type-graphql";
+import { Field, ID, InputType, ObjectType } from "type-graphql";
 
 import { Scrobble } from "./scrobble";
 import { User } from "./user";
+
+@InputType()
+export class LinkServerInput {
+  @Field()
+  machineIdentifier: string;
+}
 
 @ObjectType()
 export class Server {

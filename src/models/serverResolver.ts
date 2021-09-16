@@ -1,30 +1,14 @@
 import "reflect-metadata";
 
-import {
-  Arg,
-  Authorized,
-  Ctx,
-  Field,
-  FieldResolver,
-  InputType,
-  Mutation,
-  Query,
-  Resolver,
-  Root,
-} from "type-graphql";
+import cuid from "cuid";
+import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import { Role, Scrobble, Server as PRISMA_Server, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
-import { Server, ServerResult } from "./server";
-
-@InputType()
-class AddServerInput {
-  @Field()
-  machineIdentifier: string;
-}
+import { LinkServerInput, Server, ServerResult } from "./server";
 
 @Resolver(Server)
 export class ServerResolver {
@@ -58,7 +42,7 @@ export class ServerResolver {
 
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [ServerResult], { nullable: true })
-  async getPlexAccoundServers(@Ctx() ctx: Context): Promise<ServerResult[]> {
+  async getPlexAccountServers(@Ctx() ctx: Context): Promise<ServerResult[]> {
     const servers = await getPlexServers(ctx.user.plexAuthToken);
 
     const response: ServerResult[] = servers.map((server) => ({
@@ -81,29 +65,29 @@ export class ServerResolver {
 
   @Authorized(Role.ADMIN, Role.USER)
   @Mutation(() => Server, { nullable: true })
-  async addServer(
-    @Arg("addServerInput") addServerInput: AddServerInput,
+  async linkServer(
+    @Arg("linkServerInput") linkServerInput: LinkServerInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Server> {
     const servers = await getPlexServers(ctx.user.plexAuthToken);
 
-    const serverToAdd = servers.find(
-      (server) => server._attributes.machineIdentifier === addServerInput.machineIdentifier
+    const serverToLink = servers.find(
+      (server) => server._attributes.machineIdentifier === linkServerInput.machineIdentifier
     );
 
-    if (serverToAdd) {
+    if (serverToLink) {
       return await ctx.prisma.server.upsert({
         where: {
-          uuid: serverToAdd._attributes.machineIdentifier,
+          uuid: serverToLink._attributes.machineIdentifier,
         },
         update: {
-          name: serverToAdd._attributes.name,
+          name: serverToLink._attributes.name,
         },
 
         create: {
-          secret: "abc",
-          uuid: serverToAdd._attributes.machineIdentifier,
-          name: serverToAdd._attributes.name,
+          secret: cuid(),
+          uuid: serverToLink._attributes.machineIdentifier,
+          name: serverToLink._attributes.name,
           users: {
             connect: {
               id: ctx.user.id,

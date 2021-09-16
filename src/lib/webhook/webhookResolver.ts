@@ -1,32 +1,14 @@
 import "reflect-metadata";
 
-import { Arg, Ctx, Field, InputType, Mutation, Resolver } from "type-graphql";
+import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
 
-import { Context } from "../lib/context";
-import { Anilist } from "../lib/providers/anilist";
-import { Webhook } from "./webhook";
-
-@InputType()
-export class WebhookInput {
-  @Field()
-  secret: string;
-
-  @Field()
-  plexId: number;
-
-  @Field()
-  serverUUID: string;
-
-  @Field()
-  providerMediaId: number;
-
-  @Field()
-  episode: number;
-}
+import { Context } from "../context";
+import { Anilist } from "../providers/anilist";
+import { Webhook, WebhookInput } from "./webhook";
 
 @Resolver(Webhook)
 export class WebhookResolver {
-  @Mutation((returns) => Webhook)
+  @Mutation(() => Webhook)
   async scrobble(
     @Arg("webhookInput") webhookInput: WebhookInput,
     @Ctx() ctx: Context
@@ -47,7 +29,7 @@ export class WebhookResolver {
       };
     }
 
-    const user = server.users.find((user) => user.plexId !== webhookInput.plexId);
+    const user = server.users.find((user) => user.plexId === webhookInput.plexId);
 
     if (!user) {
       return {
@@ -74,7 +56,7 @@ export class WebhookResolver {
     for (const account of accounts) {
       switch (account.provider) {
         case "ANILIST": {
-          const anilist = new Anilist(account.userId, account.accessToken);
+          const anilist = new Anilist(account.accountId, account.accessToken);
           void anilist.setProgress(webhookInput.providerMediaId, webhookInput.episode);
           break;
         }
@@ -87,7 +69,7 @@ export class WebhookResolver {
 
     return {
       success: true,
-      reason: "Unknown error",
+      reason: "",
     };
   }
 }

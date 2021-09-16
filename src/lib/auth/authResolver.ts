@@ -17,9 +17,9 @@ import {
   RegistrationCredentialJSON,
 } from "@simplewebauthn/typescript-types";
 
-import { Context } from "../lib/context";
-import { env } from "../lib/env";
-import { generateTokens } from "../utils/auth";
+import { generateTokens } from "../../utils/auth";
+import { Context } from "../context";
+import { env } from "../env";
 import {
   AuthenticationInput,
   AuthenticationType,
@@ -41,7 +41,7 @@ export class AuthResolver {
 
     const user = await ctx.prisma.user.upsert({
       where: {
-        plexUUID: plexAccountData.user.uuid,
+        plexId: plexAccountData.user.id,
       },
       include: {
         authenticators: true,
@@ -56,7 +56,6 @@ export class AuthResolver {
         email: plexAccountData.user.email,
         plexAuthToken: authenticationInput.plexToken,
         plexId: plexAccountData.user.id,
-        plexUUID: plexAccountData.user.uuid,
         thumb: plexAccountData.user.thumb,
         username: plexAccountData.user.username,
       },
@@ -191,10 +190,7 @@ export class AuthResolver {
             revoked: false,
             transports:
               authenticatorData.transports?.map((transport) => {
-                /**
-                 * @todo may need to be converted to uppercase or select enum
-                 */
-                return transport as Transport;
+                return transport.toUpperCase() as Transport;
               }) ?? [],
             user: {
               connect: {

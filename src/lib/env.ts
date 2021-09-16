@@ -12,6 +12,7 @@ export const schema = {
   SENTRY_DSN: String,
   ANILIST_ID: Number,
   ANILIST_SECRET: String,
+  ANILIST_REDIRECT_URL: String,
   RP_ID: String,
   RP_NAME: String,
   RP_ORIGIN: String,

@@ -21,6 +21,7 @@ specifiers:
   babel-plugin-module-resolver: ^4.1.0
   base64url: ^3.0.1
   class-validator: ^0.13.1
+  cuid: ^2.1.8
   eslint: ^7.32.0
   eslint-config-prettier: ^8.3.0
   eslint-import-resolver-babel-module: ^5.3.1
@@ -58,6 +59,7 @@ dependencies:
   axios: 0.21.4
   base64url: 3.0.1
   class-validator: 0.13.1
+  cuid: 2.1.8
   graphql: 15.5.3
   graphql-fields: 2.0.3
   graphql-request: 3.5.0_graphql@15.5.3
@@ -1424,6 +1426,10 @@ packages:
 
   /cssfilter/0.0.10:
     resolution: {integrity: sha1-xtJnJjKi5cg+AT5oZKQs6N79IK4=}
+
+  /cuid/2.1.8:
+    resolution: {integrity: sha512-xiEMER6E7TlTPnDxrM4eRiC6TRgjNX9xzEZ5U/Se2YJKr7Mq4pJn/2XEHjl3STcSh96GmkHPcBXLES8M29wyyg==}
+    dev: false
 
   /debug/2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}

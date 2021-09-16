@@ -54,8 +54,8 @@ export class Anilist extends BaseProvider<"graphql"> {
 
   async getEntry(id: number): Promise<ILibraryEntry> {
     const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_QUERY, {
-      providerUserId: this.providerUserId,
-      providerMediaId: id,
+      userId: this.providerUserId,
+      mediaId: id,
     });
 
     return Promise.resolve({

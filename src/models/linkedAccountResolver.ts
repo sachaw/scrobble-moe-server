@@ -1,30 +1,32 @@
 import "reflect-metadata";
 
-import axios from "axios";
-import {
-  Arg,
-  Authorized,
-  Ctx,
-  Field,
-  FieldResolver,
-  InputType,
-  Mutation,
-  Query,
-  Resolver,
-  Root,
-} from "type-graphql";
+import { AuthenticationError } from "apollo-server";
+import axios, { AxiosError } from "axios";
+import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { LinkedAccount as PRISMA_LinkedAccount, Role, Scrobble, User } from "@prisma/client";
+import {
+  LinkedAccount as PRISMA_LinkedAccount,
+  Provider,
+  Role,
+  Scrobble,
+  User,
+} from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { env } from "../lib/env";
-import { LinkedAccount } from "./linkedAccount";
+import {
+  AddLinkedAccountInput,
+  LinkedAccount,
+  ProviderLoginUrlInput,
+  ProviderLoginUrlResponse,
+} from "./linkedAccount";
 
-@InputType()
-class AddLinkedAccountInput {
-  @Field()
-  code: string;
+export interface IAnilistAuthResponse {
+  token_type: string;
+  expires_in: number;
+  access_token: string;
+  refresh_token: string;
 }
 
 @Resolver(LinkedAccount)
@@ -63,58 +65,78 @@ export class LinkedAccountResolver {
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Mutation(() => LinkedAccount, { nullable: true })
+  @Query(() => ProviderLoginUrlResponse)
+  ProviderLoginUrl(
+    @Arg("providerLoginUrlInput") providerLoginUrlInput: ProviderLoginUrlInput,
+    @Ctx() ctx: Context
+  ): ProviderLoginUrlResponse {
+    switch (providerLoginUrlInput.provider) {
+      case Provider.ANILIST:
+        return {
+          url: `https://anilist.co/api/v2/oauth/authorize?client_id=${env.ANILIST_ID}&redirect_uri=${env.ANILIST_REDIRECT_URL}&response_type=code`,
+        };
+      case Provider.KITSU:
+        return {
+          url: "NOT YET IMPLEMENTED",
+        };
+    }
+  }
+
+  @Authorized(Role.ADMIN, Role.USER)
+  @Mutation(() => LinkedAccount)
   async addLinkedAccount(
     @Arg("addLinkedAccountInput") addLinkedAccountInput: AddLinkedAccountInput,
     @Ctx() ctx: Context
-  ): Promise<void> {
-    const anilistToken = await axios.post(
-      "https://anilist.co/api/v2/oauth/token",
-      {
-        grant_type: "authorization_code",
-        client_id: env.ANILIST_ID,
-        client_secret: env.ANILIST_SECRET,
-        redirect_uri: "",
-        code: addLinkedAccountInput.code,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+  ): Promise<PRISMA_LinkedAccount> {
+    const anilistToken = await axios
+      .post(
+        "https://anilist.co/api/v2/oauth/token",
+        {
+          grant_type: "authorization_code",
+          client_id: env.ANILIST_ID,
+          client_secret: env.ANILIST_SECRET,
+          redirect_uri: "http://localhost:3000",
+          code: addLinkedAccountInput.code,
         },
-      }
-    );
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      )
+      .catch((error: Error | AxiosError) => {
+        if (axios.isAxiosError(error)) {
+          switch (error.response?.status) {
+            case 403:
+              throw new AuthenticationError("Invalid request");
+            case 400:
+              throw new AuthenticationError("Expired or already used code provided");
+            default:
+              throw new AuthenticationError("Unknown Error");
+          }
+        } else {
+          throw new Error(error.message);
+        }
+      });
 
-    console.log(anilistToken);
+    const anilistTokenResponse = anilistToken.data as IAnilistAuthResponse;
 
-    // const servers = await getPlexServers(ctx.user.plexAuthToken);
+    const linkedAccount = await ctx.prisma.linkedAccount.create({
+      data: {
+        accessToken: anilistTokenResponse.access_token,
+        refreshToken: anilistTokenResponse.refresh_token,
+        accessTokenExpires: new Date(anilistTokenResponse.expires_in),
+        accountId: "abc",
+        provider: "ANILIST",
+        user: {
+          connect: {
+            id: ctx.user?.id,
+          },
+        },
+      },
+    });
 
-    // const serverToAdd = servers.find(
-    //   (server) => server._attributes.machineIdentifier === addLinkedAccountInput.machineIdentifier
-    // );
-
-    // if (serverToAdd) {
-    //   return await ctx.prisma.server.upsert({
-    //     where: {
-    //       uuid: serverToAdd._attributes.machineIdentifier,
-    //     },
-    //     update: {
-    //       name: serverToAdd._attributes.name,
-    //     },
-
-    //     create: {
-    //       secret: "abc",
-    //       uuid: serverToAdd._attributes.machineIdentifier,
-    //       name: serverToAdd._attributes.name,
-    //       users: {
-    //         connect: {
-    //           id: ctx.user.id,
-    //         },
-    //       },
-    //     },
-    //   });
-    // }
-
-    throw new NotFoundError("code");
+    return linkedAccount;
   }
 }
