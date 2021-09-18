@@ -8,7 +8,8 @@ import { Role, Scrobble, Server as PRISMA_Server, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
-import { LinkServerInput, Server, ServerResult } from "./server";
+import { restrictUser } from "./helperTypes";
+import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server";
 
 @Resolver(Server)
 export class ServerResolver {
@@ -34,10 +35,15 @@ export class ServerResolver {
       .scrobbles();
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Server])
-  async allServers(@Ctx() ctx: Context): Promise<PRISMA_Server[]> {
-    return await ctx.prisma.server.findMany();
+  async servers(
+    @Arg("serverFindManyInput") serverFindManyInput: ServerFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_Server[]> {
+    return await ctx.prisma.server.findMany(
+      restrictUser(serverFindManyInput, ctx.user.role, ctx.user.id)
+    );
   }
 
   @Authorized(Role.ADMIN, Role.USER)

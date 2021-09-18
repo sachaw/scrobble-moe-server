@@ -1,11 +1,11 @@
 import "reflect-metadata";
 
-import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { Encoder as PRISMA_Encoder, Role, SeriesSubscription } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { Encoder } from "./encoder";
+import { Encoder, EncoderFindManyInput } from "./encoder";
 
 @Resolver(Encoder)
 export class EncoderResolver {
@@ -23,9 +23,12 @@ export class EncoderResolver {
       .userSubscriptions();
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Encoder])
-  async allEncoders(@Ctx() ctx: Context): Promise<PRISMA_Encoder[]> {
-    return await ctx.prisma.encoder.findMany();
+  async encoders(
+    @Arg("encoderFindManyInput") encoderFindManyInput: EncoderFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_Encoder[]> {
+    return await ctx.prisma.encoder.findMany(encoderFindManyInput);
   }
 }

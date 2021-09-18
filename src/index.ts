@@ -6,7 +6,7 @@ import { buildSchema } from "type-graphql";
 import { MetadataService } from "@simplewebauthn/server";
 
 import { AuthResolver } from "./lib/auth/authResolver";
-import context from "./lib/context";
+import { context } from "./lib/context";
 import { loadEnv } from "./lib/env";
 import sentry from "./lib/sentry";
 import { WebhookResolver } from "./lib/webhook/webhookResolver";
@@ -16,10 +16,12 @@ import { LinkedAccountResolver } from "./models/linkedAccountResolver";
 import { ScrobbleResolver } from "./models/scrobbleResolver";
 import { SeriesSubscriptionResolver } from "./models/seriesSubscriptionResolver";
 import { ServerResolver } from "./models/serverResolver";
+import { TokenResolver } from "./models/tokenResolver";
 import { TorrentClientResolver } from "./models/torrentClientResolver";
 import { UserResolver } from "./models/userResolver";
 import sentryPlugin from "./plugins/sentry";
 import sentryPerformancePlugin from "./plugins/sentryPerformance";
+import tokenManagementPlugin from "./plugins/tokenManagement";
 import { authCheck } from "./utils/auth";
 
 loadEnv();
@@ -38,23 +40,27 @@ const app = async (): Promise<void> => {
       ScrobbleResolver,
       SeriesSubscriptionResolver,
       ServerResolver,
-      // sessionResolver
-      // tokenResolver
+      TokenResolver,
       TorrentClientResolver,
       UserResolver,
       WebhookResolver,
     ],
     authChecker: authCheck,
+    dateScalarMode: "isoDate",
+    scalarsMap: [],
   });
 
-  void new ApolloServer({
+  const server = new ApolloServer({
     schema,
-    context: context,
+    context,
     cors: {
-      origin: "*",
+      origin: "https://studio.apollographql.com",
+      credentials: true,
     },
-    plugins: [sentryPlugin, sentryPerformancePlugin],
-  }).listen({ port: 4000 }, () => console.log(`🚀 Server ready`));
+    plugins: [sentryPlugin, sentryPerformancePlugin, tokenManagementPlugin],
+  });
+
+  void server.listen({ port: 4000 }, () => console.log(`🚀 Server ready`));
 };
 
 void app();

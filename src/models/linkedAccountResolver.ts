@@ -15,9 +15,11 @@ import {
 
 import { Context } from "../lib/context";
 import { env } from "../lib/env";
+import { restrictUser } from "./helperTypes";
 import {
   AddLinkedAccountInput,
   LinkedAccount,
+  LinkedAccountFindManyInput,
   ProviderLoginUrlInput,
   ProviderLoginUrlResponse,
 } from "./linkedAccount";
@@ -58,10 +60,15 @@ export class LinkedAccountResolver {
     return user;
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [LinkedAccount])
-  async allLinkedAccounts(@Ctx() ctx: Context): Promise<PRISMA_LinkedAccount[]> {
-    return await ctx.prisma.linkedAccount.findMany();
+  async linkedAccounts(
+    @Arg("linkedAccountFindManyInput") linkedAccountFindManyInput: LinkedAccountFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_LinkedAccount[]> {
+    return await ctx.prisma.linkedAccount.findMany(
+      restrictUser(linkedAccountFindManyInput, ctx.user.role, ctx.user.id)
+    );
   }
 
   @Authorized(Role.ADMIN, Role.USER)

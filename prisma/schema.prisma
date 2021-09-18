@@ -23,7 +23,6 @@ model User {
     authenticators      Authenticator[]
     accounts            LinkedAccount[]
     tokens              Token[]
-    sessions            Session[]
     scrobbles           Scrobble[]
     servers             Server[]
     torrentClients      TorrentClient[]
@@ -55,18 +54,6 @@ enum Transport {
 enum Role {
     USER
     ADMIN
-}
-
-model Session {
-    id                 String    @id @default(cuid())
-    createdAt          DateTime  @default(now())
-    updatedAt          DateTime  @updatedAt
-    expiresAt          DateTime?
-    hashedSessionToken String?
-    antiCSRFToken      String?
-
-    user   User?   @relation(fields: [userId], references: [id])
-    userId String?
 }
 
 model Token {
@@ -145,20 +132,22 @@ model Encoder {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
-    name      String
+    name      String   @unique
     rssURL    String
 
     userSubscriptions SeriesSubscription[]
 }
 
 model TorrentClient {
-    id            String                   @id @default(cuid())
-    createdAt     DateTime                 @default(now())
-    updatedAt     DateTime                 @updatedAt
-    client        TorrentClientApplication
-    clientVersion String
+    id             String   @id @default(cuid())
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    clientUrl      String
+    clientUsername String
+    clientPassword String
 
-    user   User   @relation(fields: [userId], references: [id])
+    client TorrentClientApplication
+    user   User                     @relation(fields: [userId], references: [id])
     userId String
 }
 

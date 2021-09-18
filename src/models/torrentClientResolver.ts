@@ -1,12 +1,13 @@
 import "reflect-metadata";
 
-import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import { Role, TorrentClient as PRISMA_TorrentClient, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { TorrentClient } from "./torrentClient";
+import { restrictUser } from "./helperTypes";
+import { TorrentClient, TorrentClientFindManyInput } from "./torrentClient";
 
 @Resolver(TorrentClient)
 export class TorrentClientResolver {
@@ -27,9 +28,14 @@ export class TorrentClientResolver {
     return user;
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [TorrentClient])
-  async allTorrentClients(@Ctx() ctx: Context): Promise<PRISMA_TorrentClient[]> {
-    return await ctx.prisma.torrentClient.findMany();
+  async torrentClients(
+    @Arg("torrentClientFindManyInput") torrentClientFindManyInput: TorrentClientFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_TorrentClient[]> {
+    return await ctx.prisma.torrentClient.findMany(
+      restrictUser(torrentClientFindManyInput, ctx.user.role, ctx.user.id)
+    );
   }
 }

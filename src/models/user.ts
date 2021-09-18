@@ -3,23 +3,32 @@ import "reflect-metadata";
 import { IsEmail } from "class-validator";
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
+import { Role } from "@prisma/client";
+
 import { Authenticator } from "./authenticator";
+import { FilterWhereInput, IntFilter, StringFilter } from "./helperTypes";
 import { LinkedAccount } from "./linkedAccount";
 import { Scrobble } from "./scrobble";
 import { SeriesSubscription } from "./seriesSubscription";
 import { Server } from "./server";
-import { Session } from "./session";
 import { Token } from "./token";
 import { TorrentClient } from "./torrentClient";
-
-enum Role {
-  USER,
-  ADMIN,
-}
 
 registerEnumType(Role, {
   name: "Role",
 });
+
+@InputType()
+export class UserFilterWhereInput extends FilterWhereInput {
+  @Field(() => StringFilter, { nullable: true })
+  username: StringFilter; //replace
+
+  @Field(() => StringFilter, { nullable: true })
+  email: StringFilter; //replace
+
+  @Field({ nullable: true })
+  plexId: IntFilter;
+}
 
 @InputType()
 export class UserUniqueInput {
@@ -68,9 +77,6 @@ export class User {
 
   @Field(() => [Token])
   tokens: Token[];
-
-  @Field(() => [Session])
-  sessions: Session[];
 
   @Field(() => [Scrobble])
   scrobbles: Scrobble[];

@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/node";
 
 const plugin: ApolloServerPlugin = {
   async requestDidStart(ctx) {
-    return {
+    return await Promise.resolve({
       async didEncounterErrors(ctx) {
         if (!ctx.operation) {
           return;
@@ -29,7 +29,7 @@ const plugin: ApolloServerPlugin = {
           });
         }
       },
-    };
+    });
   },
 };
 

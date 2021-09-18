@@ -10,7 +10,6 @@ import {
   Scrobble,
   SeriesSubscription,
   Server,
-  Session,
   Token,
   TorrentClient,
   User as PRISMA_User,
@@ -52,17 +51,6 @@ export class UserResolver {
         },
       })
       .tokens();
-  }
-
-  @FieldResolver()
-  async sessions(@Root() user: User, @Ctx() ctx: Context): Promise<Session[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .sessions();
   }
 
   @FieldResolver()

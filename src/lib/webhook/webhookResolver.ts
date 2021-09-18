@@ -67,6 +67,24 @@ export class WebhookResolver {
       }
     }
 
+    void ctx.prisma.scrobble.create({
+      data: {
+        episode: webhookInput.episode,
+        providerMediaId: webhookInput.providerMediaId.toString(),
+        status: "TRACKED",
+        server: {
+          connect: {
+            id: server.id,
+          },
+        },
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
+      },
+    });
+
     return {
       success: true,
       reason: "",

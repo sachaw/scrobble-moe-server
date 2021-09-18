@@ -1,19 +1,76 @@
 import "reflect-metadata";
 
-import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
+import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { User } from "./user";
+import { Prisma, Transport } from "@prisma/client";
 
-enum Transport {
-  USB,
-  BLE,
-  NFC,
-  INTERNAL,
-}
+import {
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  IntFilter,
+  StringFilter,
+  WhereUniqueInput,
+} from "./helperTypes";
+import { User, UserFilterWhereInput } from "./user";
 
 registerEnumType(Transport, {
   name: "Transport",
 });
+
+registerEnumType(Prisma.AuthenticatorScalarFieldEnum, {
+  name: "AuthenticatorScalarFieldEnum",
+});
+
+/**
+ * FIXME:
+ */
+@InputType()
+export class AuthenticatorFilterWhereInput extends FilterWhereInput {
+  @Field({ nullable: true })
+  AAGUID: StringFilter;
+
+  /**
+   * @todo fix
+   */
+  @Field({ nullable: true })
+  credentialID: StringFilter; ///BytesFilter
+
+  /**
+   * @todo fix
+   */
+  @Field({ nullable: true })
+  credentialPublicKey: StringFilter; ///BytesFilter
+
+  @Field({ nullable: true })
+  counter: IntFilter;
+
+  @Field({ nullable: true })
+  revoked: boolean;
+
+  @Field(() => Transport, { nullable: true })
+  transports: Transport;
+
+  @Field(() => UserFilterWhereInput, { nullable: true })
+  user: UserFilterWhereInput;
+}
+
+@InputType()
+export class AuthenticatorUniqueInput extends WhereUniqueInput {
+  @Field({ nullable: true })
+  credentialID: string; // @TODO: should be of type Bytes
+}
+
+@InputType()
+export class AuthenticatorFindManyInput extends FindManyWithScopeInput {
+  @Field(() => AuthenticatorFilterWhereInput, { nullable: true })
+  where: AuthenticatorFilterWhereInput;
+
+  @Field(() => AuthenticatorUniqueInput, { nullable: true })
+  cursor: AuthenticatorUniqueInput;
+
+  @Field(() => Prisma.AuthenticatorScalarFieldEnum, { nullable: true })
+  distinct: Prisma.AuthenticatorScalarFieldEnum;
+}
 
 @ObjectType()
 export class Authenticator {
@@ -46,7 +103,4 @@ export class Authenticator {
 
   @Field(() => User)
   user: User;
-
-  @Field(() => User)
-  revokedBy: User;
 }

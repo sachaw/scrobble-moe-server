@@ -2,13 +2,63 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
+import { Prisma, Provider } from "@prisma/client";
+
+import {
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  StringFilter,
+  WhereUniqueInput,
+} from "./helperTypes";
 import { Scrobble } from "./scrobble";
-import { User } from "./user";
-import { Provider } from ".pnpm/@prisma+client@3.0.2_prisma@3.0.2/node_modules/.prisma/client";
+import { User, UserFilterWhereInput } from "./user";
 
 registerEnumType(Provider, {
   name: "Provider",
 });
+
+registerEnumType(Prisma.LinkedAccountScalarFieldEnum, {
+  name: "LinkedAccountScalarFieldEnum",
+});
+
+@InputType()
+export class LinkedAccountFilterWhereInput extends FilterWhereInput {
+  //enum
+  @Field(() => Provider, { nullable: true })
+  provider: Provider;
+
+  @Field({ nullable: true })
+  accountId: StringFilter;
+
+  @Field({ nullable: true })
+  accessTokenExpires: StringFilter;
+
+  /**
+   * @todo implement
+   */
+  // scrobbles
+
+  @Field(() => UserFilterWhereInput, { nullable: true })
+  user: UserFilterWhereInput;
+}
+
+@InputType()
+export class LinkedAccountUniqueInput extends WhereUniqueInput {
+  @Field({ nullable: true })
+  accountId: string;
+}
+
+@InputType()
+export class LinkedAccountFindManyInput extends FindManyWithScopeInput {
+  @Field(() => LinkedAccountFilterWhereInput, { nullable: true })
+  where: LinkedAccountFilterWhereInput;
+
+  @Field(() => LinkedAccountUniqueInput, { nullable: true })
+  cursor: LinkedAccountUniqueInput;
+
+  @Field(() => Prisma.LinkedAccountScalarFieldEnum, { nullable: true })
+  distinct: Prisma.LinkedAccountScalarFieldEnum;
+}
 
 @InputType()
 export class ProviderLoginUrlInput {

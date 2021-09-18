@@ -3,6 +3,7 @@ import { Arg, Ctx, Mutation } from "type-graphql";
 import { decode, encode } from "universal-base64";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
+import { Transport } from "@prisma/client";
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -28,7 +29,6 @@ import {
   WebauthnInput,
 } from "./auth";
 import { getPlexAccount } from "./utils";
-import { Transport } from ".pnpm/@prisma+client@3.0.2_prisma@3.0.2/node_modules/.prisma/client";
 
 export class AuthResolver {
   @Mutation(() => AuthResponse)

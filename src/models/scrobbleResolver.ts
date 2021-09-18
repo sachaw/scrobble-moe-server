@@ -1,12 +1,13 @@
 import "reflect-metadata";
 
-import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import { LinkedAccount, Role, Scrobble as PRISMA_Scrobble, Server, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { Scrobble } from "./scrobble";
+import { restrictUser } from "./helperTypes";
+import { Scrobble, ScrobbleFindManyInput } from "./scrobble";
 
 @Resolver(Scrobble)
 export class ScrobbleResolver {
@@ -53,9 +54,14 @@ export class ScrobbleResolver {
       .accounts();
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Scrobble])
-  async allScrobles(@Ctx() ctx: Context): Promise<PRISMA_Scrobble[]> {
-    return await ctx.prisma.scrobble.findMany();
+  async scrobbles(
+    @Arg("scrobbleFindManyInput") scrobbleFindManyInput: ScrobbleFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_Scrobble[]> {
+    return await ctx.prisma.scrobble.findMany(
+      restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id)
+    );
   }
 }
