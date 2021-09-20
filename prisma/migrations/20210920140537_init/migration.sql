@@ -21,15 +21,16 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "username" TEXT,
+    "username" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "plexUUID" TEXT NOT NULL,
     "plexId" INTEGER NOT NULL,
     "plexAuthToken" TEXT NOT NULL,
     "thumb" TEXT NOT NULL,
+    "authenticationChallenge" TEXT,
+    "authenticationChallengeExpiresAt" TIMESTAMP(3),
     "role" "Role" NOT NULL DEFAULT E'USER',
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -37,26 +38,15 @@ CREATE TABLE "Authenticator" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "AAGUID" TEXT NOT NULL,
     "credentialID" BYTEA NOT NULL,
     "credentialPublicKey" BYTEA NOT NULL,
     "counter" INTEGER NOT NULL,
+    "revoked" BOOLEAN NOT NULL,
     "transports" "Transport"[],
     "userId" TEXT,
 
-    PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Session" (
-    "id" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "expiresAt" TIMESTAMP(3),
-    "hashedSessionToken" TEXT,
-    "antiCSRFToken" TEXT,
-    "userId" TEXT,
-
-    PRIMARY KEY ("id")
+    CONSTRAINT "Authenticator_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -69,7 +59,7 @@ CREATE TABLE "Token" (
     "type" "TokenType" NOT NULL,
     "userId" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "Token_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -79,8 +69,9 @@ CREATE TABLE "Server" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "uuid" TEXT NOT NULL,
     "secret" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "Server_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -88,13 +79,24 @@ CREATE TABLE "Scrobble" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "status" "ScrobbleStatus" NOT NULL,
     "providerMediaId" TEXT NOT NULL,
     "episode" INTEGER NOT NULL,
     "userId" TEXT NOT NULL,
     "serverId" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "Scrobble_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ScrobbleProviderStatus" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "status" "ScrobbleStatus" NOT NULL,
+    "provider" "Provider" NOT NULL,
+    "scrobbleId" TEXT NOT NULL,
+
+    CONSTRAINT "ScrobbleProviderStatus_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -109,7 +111,7 @@ CREATE TABLE "LinkedAccount" (
     "refreshToken" TEXT,
     "userId" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "LinkedAccount_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -120,7 +122,7 @@ CREATE TABLE "Encoder" (
     "name" TEXT NOT NULL,
     "rssURL" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "Encoder_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -128,11 +130,13 @@ CREATE TABLE "TorrentClient" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "clientUrl" TEXT NOT NULL,
+    "clientUsername" TEXT NOT NULL,
+    "clientPassword" TEXT NOT NULL,
     "client" "TorrentClientApplication" NOT NULL,
-    "clientVersion" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "TorrentClient_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -146,7 +150,7 @@ CREATE TABLE "SeriesSubscription" (
     "userId" TEXT NOT NULL,
     "encoderId" TEXT NOT NULL,
 
-    PRIMARY KEY ("id")
+    CONSTRAINT "SeriesSubscription_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -162,28 +166,28 @@ CREATE TABLE "_LinkedAccountToScrobble" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User.email_unique" ON "User"("email");
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User.plexUUID_unique" ON "User"("plexUUID");
+CREATE UNIQUE INDEX "User_plexId_key" ON "User"("plexId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User.plexId_unique" ON "User"("plexId");
+CREATE UNIQUE INDEX "Authenticator_credentialID_key" ON "Authenticator"("credentialID");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Authenticator.credentialID_unique" ON "Authenticator"("credentialID");
+CREATE UNIQUE INDEX "Token_hashedToken_key" ON "Token"("hashedToken");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Token.hashedToken_unique" ON "Token"("hashedToken");
+CREATE UNIQUE INDEX "Server_uuid_key" ON "Server"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Server.uuid_unique" ON "Server"("uuid");
+CREATE UNIQUE INDEX "Server_secret_key" ON "Server"("secret");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Server.secret_unique" ON "Server"("secret");
+CREATE UNIQUE INDEX "LinkedAccount_accountId_key" ON "LinkedAccount"("accountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "LinkedAccount.accountId_unique" ON "LinkedAccount"("accountId");
+CREATE UNIQUE INDEX "Encoder_name_key" ON "Encoder"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_ServerToUser_AB_unique" ON "_ServerToUser"("A", "B");
@@ -198,31 +202,31 @@ CREATE UNIQUE INDEX "_LinkedAccountToScrobble_AB_unique" ON "_LinkedAccountToScr
 CREATE INDEX "_LinkedAccountToScrobble_B_index" ON "_LinkedAccountToScrobble"("B");
 
 -- AddForeignKey
-ALTER TABLE "Authenticator" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Authenticator" ADD CONSTRAINT "Authenticator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Session" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Token" ADD CONSTRAINT "Token_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Token" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Scrobble" ADD CONSTRAINT "Scrobble_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Scrobble" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Scrobble" ADD CONSTRAINT "Scrobble_serverId_fkey" FOREIGN KEY ("serverId") REFERENCES "Server"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Scrobble" ADD FOREIGN KEY ("serverId") REFERENCES "Server"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ScrobbleProviderStatus" ADD CONSTRAINT "ScrobbleProviderStatus_scrobbleId_fkey" FOREIGN KEY ("scrobbleId") REFERENCES "Scrobble"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "LinkedAccount" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "LinkedAccount" ADD CONSTRAINT "LinkedAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TorrentClient" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TorrentClient" ADD CONSTRAINT "TorrentClient_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SeriesSubscription" ADD FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SeriesSubscription" ADD CONSTRAINT "SeriesSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SeriesSubscription" ADD FOREIGN KEY ("encoderId") REFERENCES "Encoder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SeriesSubscription" ADD CONSTRAINT "SeriesSubscription_encoderId_fkey" FOREIGN KEY ("encoderId") REFERENCES "Encoder"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ServerToUser" ADD FOREIGN KEY ("A") REFERENCES "Server"("id") ON DELETE CASCADE ON UPDATE CASCADE;
