@@ -3,9 +3,9 @@ import "reflect-metadata";
 import { Ctx, FieldResolver, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
+import { Scrobble } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { Scrobble } from "./scrobble";
 import { ScrobbleProviderStatus } from "./scrobbleProviderStatus";
 
 @Resolver(ScrobbleProviderStatus)
@@ -24,7 +24,7 @@ export class ScrobbleProviderStatusResolver {
       .scrobble();
 
     if (!scrobble) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError("Scrobble not found");
     }
 
     return scrobble;

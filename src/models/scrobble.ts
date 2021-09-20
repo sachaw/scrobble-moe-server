@@ -67,9 +67,6 @@ export class Scrobble {
   @Field()
   updatedAt: Date;
 
-  @Field(() => ScrobbleProviderStatus)
-  status: ScrobbleProviderStatus;
-
   @Field()
   providerMediaId: string;
 
@@ -84,4 +81,7 @@ export class Scrobble {
 
   @Field(() => [LinkedAccount])
   accounts: LinkedAccount[];
+
+  @Field(() => [ScrobbleProviderStatus])
+  status: ScrobbleProviderStatus[];
 }

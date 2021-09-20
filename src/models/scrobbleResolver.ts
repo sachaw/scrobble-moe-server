@@ -3,7 +3,14 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { LinkedAccount, Role, Scrobble as PRISMA_Scrobble, Server, User } from "@prisma/client";
+import {
+  LinkedAccount,
+  Role,
+  Scrobble as PRISMA_Scrobble,
+  ScrobbleProviderStatus,
+  Server,
+  User,
+} from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { restrictUser } from "./helperTypes";
@@ -52,6 +59,17 @@ export class ScrobbleResolver {
         },
       })
       .accounts();
+  }
+
+  @FieldResolver()
+  async status(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<ScrobbleProviderStatus[]> {
+    return await ctx.prisma.scrobble
+      .findUnique({
+        where: {
+          id: scrobble.id,
+        },
+      })
+      .status();
   }
 
   @Authorized(Role.ADMIN, Role.USER)
