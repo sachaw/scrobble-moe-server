@@ -4,21 +4,18 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma } from "@prisma/client";
 
-import { Encoder } from "./encoder";
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { User, UserFilterWhereInput } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { BaseEncoderFilterWhereInput, Encoder } from "./encoder";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(Prisma.SeriesSubscriptionScalarFieldEnum, {
   name: "SeriesSubscriptionScalarFieldEnum",
 });
 
 @InputType()
-export class SeriesSubscriptionFilterWhereInput extends FilterWhereInput {
+export class BaseSeriesSubscriptionFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   nameIncludes: StringFilter;
 
@@ -27,15 +24,21 @@ export class SeriesSubscriptionFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   providerMediaId: StringFilter;
-
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
-
-  /**
-   * @todo Implement
-   */
-  // encoder
 }
+
+@InputType()
+export class SeriesSubscriptionFilterWhereInput extends BaseSeriesSubscriptionFilterWhereInput {
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+
+  @Field(() => BaseEncoderFilterWhereInput, { nullable: true })
+  encoder: BaseEncoderFilterWhereInput;
+}
+
+@InputType()
+export class SeriesSubscriptionArrayFilter extends ArrayFilter(
+  BaseSeriesSubscriptionFilterWhereInput
+) {}
 
 @InputType()
 export class SeriesSubscriptionFindManyInput extends FindManyWithScopeInput {

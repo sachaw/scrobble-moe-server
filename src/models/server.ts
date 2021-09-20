@@ -4,21 +4,18 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma } from "@prisma/client";
 
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { Scrobble } from "./scrobble";
-import { User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
+import { User, UserArrayFilter } from "./user";
 
 registerEnumType(Prisma.ServerScalarFieldEnum, {
   name: "ServerScalarFieldEnum",
 });
 
 @InputType()
-export class ServerFilterWhereInput extends FilterWhereInput {
+export class BaseServerFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   uuid: StringFilter;
 
@@ -27,17 +24,19 @@ export class ServerFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   name: StringFilter;
-
-  /**
-   * @todo implement
-   */
-  // users
-
-  /**
-   * @todo implement
-   */
-  // scrobbles
 }
+
+@InputType()
+export class ServerFilterWhereInput extends BaseServerFilterWhereInput {
+  @Field(() => UserArrayFilter, { nullable: true })
+  users: UserArrayFilter;
+
+  @Field(() => ScrobbleArrayFilter, { nullable: true })
+  scrobbles: ScrobbleArrayFilter;
+}
+
+@InputType()
+export class ServerArrayFilter extends ArrayFilter(BaseServerFilterWhereInput) {}
 
 @InputType()
 export class ServerUniqueInput extends WhereUniqueInput {

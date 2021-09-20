@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import {
@@ -11,7 +11,8 @@ import {
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { SeriesSubscription } from "./seriesSubscription";
+import { restrictUser } from "./helperTypes";
+import { SeriesSubscription, SeriesSubscriptionFindManyInput } from "./seriesSubscription";
 
 @Resolver(SeriesSubscription)
 export class SeriesSubscriptionResolver {
@@ -52,9 +53,15 @@ export class SeriesSubscriptionResolver {
     return encoder;
   }
 
-  @Authorized(Role.ADMIN)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [SeriesSubscription])
-  async allSeriesSubscriptions(@Ctx() ctx: Context): Promise<PRISMA_SeriesSubscription[]> {
-    return await ctx.prisma.seriesSubscription.findMany();
+  async seriesSubscriptions(
+    @Arg("seriesSubscriptionFindManyInput")
+    seriesSubscriptionFindManyInput: SeriesSubscriptionFindManyInput,
+    @Ctx() ctx: Context
+  ): Promise<PRISMA_SeriesSubscription[]> {
+    return await ctx.prisma.seriesSubscription.findMany(
+      restrictUser(seriesSubscriptionFindManyInput, ctx.user.role, ctx.user.id)
+    );
   }
 }

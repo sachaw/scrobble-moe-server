@@ -4,14 +4,12 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma, TokenType } from "@prisma/client";
 
-import {
-  DateTimeFilter,
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { User, UserFilterWhereInput } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { DateTimeFilter } from "../utils/types/DateTimeFilter";
+import { EnumFilter } from "../utils/types/EnumFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(TokenType, {
   name: "TokenType",
@@ -22,19 +20,28 @@ registerEnumType(Prisma.TokenScalarFieldEnum, {
 });
 
 @InputType()
-export class TokenFilterWhereInput extends FilterWhereInput {
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
+export class TokenTypeEnumFilter extends EnumFilter(TokenType) {}
 
+@InputType()
+export class BaseTokenFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   hashedToken: StringFilter;
 
   @Field({ nullable: true })
   expiresAt: DateTimeFilter;
 
-  @Field(() => TokenType, { nullable: true })
-  type: TokenType;
+  @Field(() => TokenTypeEnumFilter, { nullable: true })
+  type: TokenTypeEnumFilter;
 }
+
+@InputType()
+export class TokenFilterWhereInput extends BaseTokenFilterWhereInput {
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+}
+
+@InputType()
+export class TokenArrayFilter extends ArrayFilter(BaseTokenFilterWhereInput) {}
 
 @InputType()
 export class TokenUniqueInput extends WhereUniqueInput {

@@ -4,27 +4,21 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma, ScrobbleStatus } from "@prisma/client";
 
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  IntFilter,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { LinkedAccount } from "./linkedAccount";
-import { Server } from "./server";
-import { User, UserFilterWhereInput } from "./user";
-
-registerEnumType(ScrobbleStatus, {
-  name: "ScrobbleStatus",
-});
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { IntFilter } from "../utils/types/IntFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount";
+import { ScrobbleProviderStatus } from "./scrobbleProviderStatus";
+import { BaseServerFilterWhereInput, Server } from "./server";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(Prisma.ScrobbleScalarFieldEnum, {
   name: "ScrobbleScalarFieldEnum",
 });
 
 @InputType()
-export class ScrobbleFilterWhereInput extends FilterWhereInput {
+export class BaseScrobbleFilterWhereInput extends FilterWhereInput {
   @Field(() => ScrobbleStatus, { nullable: true })
   status: ScrobbleStatus;
 
@@ -33,21 +27,22 @@ export class ScrobbleFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   episode: IntFilter;
-
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
-
-  /**
-   * @todo implement
-   */
-  // @Field(() => ServerWhereInput, { nullable: true })
-  // server: ServerWhereInput;
-
-  /**
-   * @todo implement
-   */
-  // accounts
 }
+
+@InputType()
+export class ScrobbleFilterWhereInput extends BaseScrobbleFilterWhereInput {
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+
+  @Field(() => BaseServerFilterWhereInput, { nullable: true })
+  server: BaseServerFilterWhereInput;
+
+  @Field(() => LinkedAccountArrayFilter, { nullable: true })
+  accounts: LinkedAccountArrayFilter;
+}
+
+@InputType()
+export class ScrobbleArrayFilter extends ArrayFilter(BaseScrobbleFilterWhereInput) {}
 
 @InputType()
 export class ScrobbleFindManyInput extends FindManyWithScopeInput {
@@ -72,8 +67,8 @@ export class Scrobble {
   @Field()
   updatedAt: Date;
 
-  @Field(() => ScrobbleStatus)
-  status: ScrobbleStatus;
+  @Field(() => ScrobbleProviderStatus)
+  status: ScrobbleProviderStatus;
 
   @Field()
   providerMediaId: string;

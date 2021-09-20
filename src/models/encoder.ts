@@ -4,26 +4,27 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma } from "@prisma/client";
 
-import { FilterWhereInput, FindManyInput, StringFilter, WhereUniqueInput } from "./helperTypes";
-import { SeriesSubscription, SeriesSubscriptionFilterWhereInput } from "./seriesSubscription";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyInput, WhereUniqueInput } from "./helperTypes";
+import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription";
 
 registerEnumType(Prisma.EncoderScalarFieldEnum, {
   name: "EncoderScalarFieldEnum",
 });
 
 @InputType()
-export class EncoderFilterWhereInput extends FilterWhereInput {
+export class BaseEncoderFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   name: StringFilter;
 
-  /**
-   * @todo URL scalar
-   */
   @Field({ nullable: true })
-  rssURL: StringFilter;
+  rssURL: string;
+}
 
-  @Field(() => SeriesSubscriptionFilterWhereInput, { nullable: true })
-  userSubscriptions: SeriesSubscriptionFilterWhereInput;
+@InputType()
+export class EncoderFilterWhereInput extends BaseEncoderFilterWhereInput {
+  @Field(() => SeriesSubscriptionArrayFilter, { nullable: true })
+  userSubscriptions: SeriesSubscriptionArrayFilter;
 }
 
 @InputType()

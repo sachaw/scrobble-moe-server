@@ -1,39 +1,104 @@
 import "reflect-metadata";
 
-import { IsEmail } from "class-validator";
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
-import { Authenticator } from "./authenticator";
-import { FilterWhereInput, IntFilter, StringFilter } from "./helperTypes";
-import { LinkedAccount } from "./linkedAccount";
-import { Scrobble } from "./scrobble";
-import { SeriesSubscription } from "./seriesSubscription";
-import { Server } from "./server";
-import { Token } from "./token";
-import { TorrentClient } from "./torrentClient";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { DateTimeFilter } from "../utils/types/DateTimeFilter";
+import { EnumFilter } from "../utils/types/EnumFilter";
+import { IntFilter } from "../utils/types/IntFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { Authenticator, AuthenticatorArrayFilter } from "./authenticator";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
+import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription";
+import { Server, ServerArrayFilter } from "./server";
+import { Token, TokenArrayFilter } from "./token";
+import { TorrentClient, TorrentClientArrayFilter } from "./torrentClient";
 
 registerEnumType(Role, {
   name: "Role",
 });
 
-@InputType()
-export class UserFilterWhereInput extends FilterWhereInput {
-  @Field(() => StringFilter, { nullable: true })
-  username: StringFilter; //replace
+registerEnumType(Prisma.UserScalarFieldEnum, {
+  name: "UserScalarFieldEnum",
+});
 
-  @Field(() => StringFilter, { nullable: true })
-  email: StringFilter; //replace
+@InputType()
+export class RoleEnumFilter extends EnumFilter(Role) {}
+
+@InputType()
+export class BaseUserFilterWhereInput extends FilterWhereInput {
+  @Field({ nullable: true })
+  username: StringFilter;
+
+  @Field({ nullable: true })
+  email: StringFilter;
 
   @Field({ nullable: true })
   plexId: IntFilter;
+
+  @Field({ nullable: true })
+  thumb: StringFilter;
+
+  @Field({ nullable: true })
+  authenticationChallenge: StringFilter;
+
+  @Field({ nullable: true })
+  authenticationChallengeExpiresAt: DateTimeFilter;
+
+  @Field(() => RoleEnumFilter, { nullable: true })
+  role: RoleEnumFilter;
 }
 
 @InputType()
-export class UserUniqueInput {
+export class UserFilterWhereInput extends BaseUserFilterWhereInput {
+  @Field(() => AuthenticatorArrayFilter, { nullable: true })
+  authenticators: AuthenticatorArrayFilter;
+
   @Field({ nullable: true })
-  id: string;
+  accounts: LinkedAccountArrayFilter;
+
+  @Field({ nullable: true })
+  tokens: TokenArrayFilter;
+
+  @Field({ nullable: true })
+  scrobbles: ScrobbleArrayFilter;
+
+  @Field({ nullable: true })
+  servers: ServerArrayFilter;
+
+  @Field({ nullable: true })
+  torrentClients: TorrentClientArrayFilter;
+
+  @Field({ nullable: true })
+  seriesSubscriptions: SeriesSubscriptionArrayFilter;
+}
+
+@InputType()
+export class UserArrayFilter extends ArrayFilter(UserFilterWhereInput) {}
+
+@InputType()
+export class UserUniqueInput extends WhereUniqueInput {
+  @Field({ nullable: true })
+  email: string;
+
+  @Field({ nullable: true })
+  plexId: number;
+}
+
+@InputType()
+export class UserFindManyInput extends FindManyWithScopeInput {
+  @Field(() => UserFilterWhereInput, { nullable: true })
+  where: UserFilterWhereInput;
+
+  @Field(() => UserUniqueInput, { nullable: true })
+  cursor: UserUniqueInput;
+
+  @Field(() => Prisma.UserScalarFieldEnum, { nullable: true })
+  distinct: Prisma.UserScalarFieldEnum;
 }
 
 @ObjectType()
@@ -51,11 +116,10 @@ export class User {
   username: string;
 
   @Field()
-  @IsEmail()
   email: string;
 
   @Field()
-  plexId: string;
+  plexId: number;
 
   @Field()
   thumb: string;

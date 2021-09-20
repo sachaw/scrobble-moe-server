@@ -73,7 +73,7 @@ export class LinkedAccountResolver {
 
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => ProviderLoginUrlResponse)
-  ProviderLoginUrl(
+  providerLoginUrl(
     @Arg("providerLoginUrlInput") providerLoginUrlInput: ProviderLoginUrlInput,
     @Ctx() ctx: Context
   ): ProviderLoginUrlResponse {

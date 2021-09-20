@@ -4,13 +4,11 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma, TorrentClientApplication } from "@prisma/client";
 
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { User, UserFilterWhereInput } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { EnumFilter } from "../utils/types/EnumFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(TorrentClientApplication, {
   name: "TorrentClientApplication",
@@ -21,7 +19,10 @@ registerEnumType(Prisma.TorrentClientScalarFieldEnum, {
 });
 
 @InputType()
-export class TorrentClientFilterWhereInput extends FilterWhereInput {
+export class TorrentClientApplicationEnumFilter extends EnumFilter(TorrentClientApplication) {}
+
+@InputType()
+export class BaseTorrentClientFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   clientUrl: StringFilter;
 
@@ -30,13 +31,19 @@ export class TorrentClientFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   clientPassword: StringFilter;
-
-  @Field(() => TorrentClientApplication, { nullable: true })
-  client: TorrentClientApplication;
-
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
 }
+
+@InputType()
+export class TorrentClientFilterWhereInput extends BaseTorrentClientFilterWhereInput {
+  @Field(() => TorrentClientApplicationEnumFilter, { nullable: true })
+  client: TorrentClientApplicationEnumFilter;
+
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+}
+
+@InputType()
+export class TorrentClientArrayFilter extends ArrayFilter(BaseTorrentClientFilterWhereInput) {}
 
 @InputType()
 export class TorrentClientFindManyInput extends FindManyWithScopeInput {

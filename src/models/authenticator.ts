@@ -1,17 +1,17 @@
 import "reflect-metadata";
 
+import { GraphQLByte } from "graphql-scalars";
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import { Prisma, Transport } from "@prisma/client";
 
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  IntFilter,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { User, UserFilterWhereInput } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { BytesFilter } from "../utils/types/BytesFilter";
+import { EnumArrayFilter } from "../utils/types/EnumArrayFilter";
+import { IntFilter } from "../utils/types/IntFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(Transport, {
   name: "Transport",
@@ -21,25 +21,19 @@ registerEnumType(Prisma.AuthenticatorScalarFieldEnum, {
   name: "AuthenticatorScalarFieldEnum",
 });
 
-/**
- * FIXME:
- */
 @InputType()
-export class AuthenticatorFilterWhereInput extends FilterWhereInput {
+export class TransportEnumFilter extends EnumArrayFilter(Transport) {}
+
+@InputType()
+export class BaseAuthenticatorFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   AAGUID: StringFilter;
 
-  /**
-   * @todo fix
-   */
   @Field({ nullable: true })
-  credentialID: StringFilter; ///BytesFilter
+  credentialID: BytesFilter;
 
-  /**
-   * @todo fix
-   */
   @Field({ nullable: true })
-  credentialPublicKey: StringFilter; ///BytesFilter
+  credentialPublicKey: BytesFilter;
 
   @Field({ nullable: true })
   counter: IntFilter;
@@ -47,17 +41,23 @@ export class AuthenticatorFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
   revoked: boolean;
 
-  @Field(() => Transport, { nullable: true })
-  transports: Transport;
-
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
+  @Field(() => TransportEnumFilter, { nullable: true })
+  transports: TransportEnumFilter;
 }
 
 @InputType()
+export class AuthenticatorFilterWhereInput extends BaseAuthenticatorFilterWhereInput {
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+}
+
+@InputType()
+export class AuthenticatorArrayFilter extends ArrayFilter(BaseAuthenticatorFilterWhereInput) {}
+
+@InputType()
 export class AuthenticatorUniqueInput extends WhereUniqueInput {
-  @Field({ nullable: true })
-  credentialID: string; // @TODO: should be of type Bytes
+  @Field(() => GraphQLByte, { nullable: true })
+  credentialID: Buffer;
 }
 
 @InputType()
@@ -86,11 +86,11 @@ export class Authenticator {
   @Field()
   AAGUID: string;
 
-  @Field()
-  credentialID: string; // @TODO: should be of type Bytes
+  @Field(() => GraphQLByte)
+  credentialID: Buffer;
 
-  @Field()
-  credentialPublicKey: string; // @TODO: should be of type Bytes
+  @Field(() => GraphQLByte)
+  credentialPublicKey: Buffer;
 
   @Field()
   counter: number;

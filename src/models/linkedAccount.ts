@@ -4,14 +4,12 @@ import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql
 
 import { Prisma, Provider } from "@prisma/client";
 
-import {
-  FilterWhereInput,
-  FindManyWithScopeInput,
-  StringFilter,
-  WhereUniqueInput,
-} from "./helperTypes";
-import { Scrobble } from "./scrobble";
-import { User, UserFilterWhereInput } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter";
+import { EnumFilter } from "../utils/types/EnumFilter";
+import { StringFilter } from "../utils/types/StringFilter";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
+import { BaseUserFilterWhereInput, User } from "./user";
 
 registerEnumType(Provider, {
   name: "Provider",
@@ -22,25 +20,31 @@ registerEnumType(Prisma.LinkedAccountScalarFieldEnum, {
 });
 
 @InputType()
-export class LinkedAccountFilterWhereInput extends FilterWhereInput {
-  //enum
-  @Field(() => Provider, { nullable: true })
-  provider: Provider;
+export class ProviderEnumFilter extends EnumFilter(Provider) {}
+
+@InputType()
+export class BaseLinkedAccountFilterWhereInput extends FilterWhereInput {
+  @Field(() => ProviderEnumFilter, { nullable: true })
+  provider: ProviderEnumFilter;
 
   @Field({ nullable: true })
   accountId: StringFilter;
 
   @Field({ nullable: true })
   accessTokenExpires: StringFilter;
-
-  /**
-   * @todo implement
-   */
-  // scrobbles
-
-  @Field(() => UserFilterWhereInput, { nullable: true })
-  user: UserFilterWhereInput;
 }
+
+@InputType()
+export class LinkedAccountFilterWhereInput extends BaseLinkedAccountFilterWhereInput {
+  @Field({ nullable: true })
+  scrobbles: ScrobbleArrayFilter;
+
+  @Field(() => BaseUserFilterWhereInput, { nullable: true })
+  user: BaseUserFilterWhereInput;
+}
+
+@InputType()
+export class LinkedAccountArrayFilter extends ArrayFilter(BaseLinkedAccountFilterWhereInput) {}
 
 @InputType()
 export class LinkedAccountUniqueInput extends WhereUniqueInput {

@@ -88,18 +88,29 @@ model Server {
 }
 
 model Scrobble {
-    id              String         @id @default(cuid())
-    createdAt       DateTime       @default(now())
-    updatedAt       DateTime       @updatedAt
-    status          ScrobbleStatus
+    id              String   @id @default(cuid())
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
     providerMediaId String
     episode         Int
 
-    user     User            @relation(fields: [userId], references: [id])
+    user     User                     @relation(fields: [userId], references: [id])
     userId   String
-    server   Server          @relation(fields: [serverId], references: [id])
+    server   Server                   @relation(fields: [serverId], references: [id])
     serverId String
     accounts LinkedAccount[]
+    status   ScrobbleProviderStatus[]
+}
+
+model ScrobbleProviderStatus {
+    id        String         @id @default(cuid())
+    createdAt DateTime       @default(now())
+    updatedAt DateTime       @updatedAt
+    status    ScrobbleStatus
+    provider  Provider
+
+    scrobble   Scrobble @relation(fields: [scrobbleId], references: [id])
+    scrobbleId String
 }
 
 enum ScrobbleStatus {

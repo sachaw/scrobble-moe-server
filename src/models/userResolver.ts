@@ -2,7 +2,6 @@ import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
-import { NotFoundError } from "@frontendmonster/graphql-utils";
 import {
   Authenticator,
   LinkedAccount,
@@ -16,7 +15,8 @@ import {
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { User, UserUniqueInput } from "./user";
+import { RequestScope } from "./helperTypes";
+import { User, UserFindManyInput } from "./user";
 
 @Resolver(User)
 export class UserResolver {
@@ -100,37 +100,23 @@ export class UserResolver {
       .seriesSubscriptions();
   }
 
-  @Authorized(Role.ADMIN)
-  @Query(() => [User])
-  async allUsers(@Ctx() ctx: Context): Promise<PRISMA_User[]> {
-    return await ctx.prisma.user.findMany();
-  }
-
   @Authorized(Role.ADMIN, Role.USER)
-  @Query(() => User, { nullable: true })
-  async user(
-    @Arg("userUniqueInput") userUniqueInput: UserUniqueInput,
+  @Query(() => [User])
+  async users(
+    @Arg("userFindManyInput") userFindManyInput: UserFindManyInput,
     @Ctx() ctx: Context
-  ): Promise<PRISMA_User> {
-    let user: PRISMA_User | null;
-    if (ctx.user.role && ctx.user.role === Role.ADMIN) {
-      user = await ctx.prisma.user.findUnique({
-        where: {
-          id: userUniqueInput.id ? userUniqueInput.id : ctx.user.id,
-        },
-      });
-    } else {
-      user = await ctx.prisma.user.findUnique({
-        where: {
-          id: ctx.user.id,
-        },
-      });
+  ): Promise<PRISMA_User[]> {
+    const { requestScope, ...filter } = userFindManyInput;
+    if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
+      filter.where.id.equals = ctx.user.id;
     }
 
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
+    void ctx.prisma.user.findMany({
+      where: {
+        tokens: userFindManyInput.where.tokens,
+      },
+    });
 
-    return user;
+    return await ctx.prisma.user.findMany(filter);
   }
 }
