@@ -8,7 +8,7 @@ import { Role, Scrobble, Server as PRISMA_Server, User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
-import { restrictUser } from "./helperTypes";
+import { RequestScope } from "./helperTypes";
 import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server";
 
 @Resolver(Server)
@@ -41,9 +41,12 @@ export class ServerResolver {
     @Arg("serverFindManyInput") serverFindManyInput: ServerFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Server[]> {
-    return await ctx.prisma.server.findMany(
-      restrictUser(serverFindManyInput, ctx.user.role, ctx.user.id)
-    );
+    const { requestScope, ...filter } = serverFindManyInput;
+    if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
+      filter.where.users.every.id.equals = ctx.user.id;
+    }
+
+    return await ctx.prisma.server.findMany(filter);
   }
 
   @Authorized(Role.ADMIN, Role.USER)

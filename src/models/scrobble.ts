@@ -2,14 +2,17 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, ScrobbleStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { ArrayFilter } from "../utils/types/ArrayFilter";
 import { IntFilter } from "../utils/types/IntFilter";
 import { StringFilter } from "../utils/types/StringFilter";
 import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
 import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount";
-import { ScrobbleProviderStatus } from "./scrobbleProviderStatus";
+import {
+  ScrobbleProviderStatus,
+  ScrobbleProviderStatusArrayFilter,
+} from "./scrobbleProviderStatus";
 import { BaseServerFilterWhereInput, Server } from "./server";
 import { BaseUserFilterWhereInput, User } from "./user";
 
@@ -19,9 +22,6 @@ registerEnumType(Prisma.ScrobbleScalarFieldEnum, {
 
 @InputType()
 export class BaseScrobbleFilterWhereInput extends FilterWhereInput {
-  @Field(() => ScrobbleStatus, { nullable: true })
-  status: ScrobbleStatus;
-
   @Field({ nullable: true })
   providerMediaId: StringFilter;
 
@@ -39,6 +39,9 @@ export class ScrobbleFilterWhereInput extends BaseScrobbleFilterWhereInput {
 
   @Field(() => LinkedAccountArrayFilter, { nullable: true })
   accounts: LinkedAccountArrayFilter;
+
+  @Field(() => ScrobbleProviderStatusArrayFilter, { nullable: true })
+  status: ScrobbleProviderStatusArrayFilter;
 }
 
 @InputType()

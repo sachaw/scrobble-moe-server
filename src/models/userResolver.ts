@@ -111,12 +111,6 @@ export class UserResolver {
       filter.where.id.equals = ctx.user.id;
     }
 
-    void ctx.prisma.user.findMany({
-      where: {
-        tokens: userFindManyInput.where.tokens,
-      },
-    });
-
     return await ctx.prisma.user.findMany(filter);
   }
 }

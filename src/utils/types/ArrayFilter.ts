@@ -1,6 +1,6 @@
-import { Field, InputType } from "type-graphql";
+import { ClassType, Field, InputType } from "type-graphql";
 
-export const ArrayFilter = <T extends object>(Filter: T) => {
+export const ArrayFilter = <T>(Filter: ClassType<T>) => {
   @InputType({ isAbstract: true })
   abstract class AbstractFnClass {
     @Field(() => Filter, { nullable: true })
