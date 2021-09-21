@@ -57,7 +57,32 @@ export class WebhookResolver {
       switch (account.provider) {
         case "ANILIST": {
           const anilist = new Anilist(account.accountId, account.accessToken);
-          void anilist.setProgress(webhookInput.providerMediaId, webhookInput.episode);
+          const status = await anilist.setProgress(
+            webhookInput.providerMediaId,
+            webhookInput.episode
+          );
+          void ctx.prisma.scrobble.create({
+            data: {
+              episode: webhookInput.episode,
+              providerMediaId: webhookInput.providerMediaId.toString(),
+              status: {
+                create: {
+                  provider: "ANILIST",
+                  status,
+                },
+              },
+              server: {
+                connect: {
+                  id: server.id,
+                },
+              },
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          });
           break;
         }
         case "KITSU": {
@@ -66,24 +91,6 @@ export class WebhookResolver {
         }
       }
     }
-
-    void ctx.prisma.scrobble.create({
-      data: {
-        episode: webhookInput.episode,
-        providerMediaId: webhookInput.providerMediaId.toString(),
-        status: "TRACKED",
-        server: {
-          connect: {
-            id: server.id,
-          },
-        },
-        user: {
-          connect: {
-            id: user.id,
-          },
-        },
-      },
-    });
 
     return {
       success: true,

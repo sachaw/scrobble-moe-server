@@ -1,6 +1,8 @@
 import axios, { AxiosStatic } from "axios";
 import { GraphQLClient } from "graphql-request";
 
+import { ScrobbleStatus } from "@prisma/client";
+
 export interface ILibraryEntry {
   mediaProviderId: number;
   title: string;
@@ -46,5 +48,5 @@ export abstract class BaseProvider<T extends ClientType> {
 
   abstract getEntry(id: number): Promise<ILibraryEntry>;
 
-  abstract setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ILibraryEntry>;
+  abstract setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus>;
 }

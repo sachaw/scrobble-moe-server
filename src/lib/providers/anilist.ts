@@ -1,5 +1,7 @@
 import { gql } from "graphql-request";
 
+import { ScrobbleStatus } from "@prisma/client";
+
 import { BaseProvider, ILibraryEntry } from "./base";
 
 const MEDIA_LIST_QUERY = gql`
@@ -66,24 +68,24 @@ export class Anilist extends BaseProvider<"graphql"> {
     });
   }
 
-  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ILibraryEntry> {
+  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
     const localEntry = entry ?? (await this.getEntry(id));
 
     if (episode > localEntry.progress) {
-      const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_MUTATION, {
-        mediaId: id,
-        progress: episode,
-        status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
-      });
-
-      return Promise.resolve({
-        mediaProviderId: (await rawData).MediaList.media.id,
-        progress: (await rawData).MediaList.progress,
-        title: (await rawData).MediaList.media.title.userPreferred,
-        total: (await rawData).MediaList.media.episodes,
-      });
+      this.client
+        .request(MEDIA_LIST_MUTATION, {
+          mediaId: id,
+          progress: episode,
+          status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
+        })
+        .then(() => {
+          return ScrobbleStatus.TRACKED;
+        })
+        .catch(() => {
+          return ScrobbleStatus.ERRORED;
+        });
     }
 
-    return Promise.resolve(localEntry);
+    return ScrobbleStatus.IGNORED;
   }
 }
