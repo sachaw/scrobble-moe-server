@@ -17,7 +17,7 @@ import {
 import { Context } from "../lib/context";
 import { RequestScope } from "./helperTypes";
 import { User, UserFindManyInput } from "./user";
-import { AuthenticationError } from ".pnpm/apollo-server-errors@3.1.0_graphql@15.6.0/node_modules/apollo-server-errors";
+import { AuthenticationError } from "apollo-server";
 
 @Resolver(User)
 export class UserResolver {
