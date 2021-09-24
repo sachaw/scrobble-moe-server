@@ -60,10 +60,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
 };
 
 export const authCheck: AuthChecker<Context> = ({ root, args, context, info }, roles) => {
-  console.log("test");
-
   const { user } = context;
-  console.log(user);
 
   if (!user) {
     return false;

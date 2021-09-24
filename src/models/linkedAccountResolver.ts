@@ -110,7 +110,7 @@ export class LinkedAccountResolver {
           grant_type: "authorization_code",
           client_id: env.ANILIST_ID,
           client_secret: env.ANILIST_SECRET,
-          redirect_uri: "http://localhost:3000/auth/anilist",
+          redirect_uri: env.ANILIST_REDIRECT_URL,
           code: addLinkedAccountInput.code,
         },
         {

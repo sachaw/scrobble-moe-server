@@ -107,12 +107,9 @@ export class UserResolver {
     @Arg("userFindManyInput") userFindManyInput: UserFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_User[]> {
-    console.log("tmmp");
-
     if (!ctx.user) {
       throw new AuthenticationError("No user");
     }
-    console.log("catch");
 
     const { requestScope, ...filter } = userFindManyInput;
     if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
