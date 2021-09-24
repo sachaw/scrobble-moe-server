@@ -3,11 +3,10 @@ import { AuthChecker } from "type-graphql";
 
 import { PrismaClient, User } from "@prisma/client";
 
-import { TokenResponse } from "../lib/auth/auth";
 import { Context } from "../lib/context";
 import { env } from "../lib/env";
 
-export const generateTokens = async (prisma: PrismaClient, user: User): Promise<TokenResponse> => {
+export const generateTokens = async (prisma: PrismaClient, user: User): Promise<string> => {
   const accessTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 3); // 3 days
   const refreshTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 40); // 40 days
 
@@ -57,12 +56,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
     },
   });
 
-  return {
-    accessToken: accessToken.hashedToken,
-    accessTokenExpires: accessToken.createdAt,
-    refreshToken: refreshToken.hashedToken,
-    refreshTokenExpires: refreshToken.createdAt,
-  };
+  return `${accessToken.hashedToken}~{refreshToken.hashedToken}`;
 };
 
 export const authCheck: AuthChecker<Context> = ({ root, args, context, info }, roles) => {

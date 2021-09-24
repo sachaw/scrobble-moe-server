@@ -136,6 +136,10 @@ export class AuthResolver {
         ? AuthenticationType.AUTHENTICATION
         : AuthenticationType.REGISTRATION,
       webauthnOptions: encode(JSON.stringify(webauthnOptions)),
+      plexUser: {
+        username: plexAccountData.user.username,
+        avatar: plexAccountData.user.thumb,
+      },
     };
   }
 
@@ -200,7 +204,13 @@ export class AuthResolver {
           },
         });
 
-        return await generateTokens(ctx.prisma, user);
+        const tokens = await generateTokens(ctx.prisma, user);
+
+        ctx.setTokens(tokens);
+
+        return {
+          success: true,
+        };
       }
 
       case AuthenticationType.AUTHENTICATION: {
@@ -245,7 +255,13 @@ export class AuthResolver {
           },
         });
 
-        return await generateTokens(ctx.prisma, user);
+        const tokens = await generateTokens(ctx.prisma, user);
+
+        ctx.setTokens(tokens);
+
+        return {
+          success: true,
+        };
       }
     }
   }

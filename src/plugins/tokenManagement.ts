@@ -5,36 +5,45 @@ import { env } from "../lib/env";
 
 const plugin: ApolloServerPlugin = {
   async requestDidStart(ctx) {
-    const rawCookies = ctx.request.http?.headers.get("cookie");
+    const tokenRegex = new RegExp(
+      /tokens=(?<access_token>[\w-]*\.[\w-]*\.[\w-]*)\|(?<refresh_token>[\w-]*\.[\w-]*\.[\w-]*)/
+    );
 
-    // console.log(ctx.operation);
+    const tokens = tokenRegex.exec(ctx.request.http?.headers.get("cookie") ?? "");
 
-    if (rawCookies) {
-      const cookies = rawCookies.split(";").map((cookie) => cookie.trim().split("="));
-
-      const access_token = cookies.find((cookie) => cookie[0] === "access_token");
-      const refresh_token = cookies.find((cookie) => cookie[0] === "refresh_token");
-
-      if (access_token) {
-        const decoded = verify(access_token[1], env.JWT_SECRET);
-        return Promise.resolve();
-      }
-
-      if (refresh_token) {
-        const decoded = verify(refresh_token[1], env.JWT_SECRET);
-        return Promise.resolve();
-      }
+    if (!tokens || !tokens.groups) {
+      return await Promise.resolve({});
     }
 
-    return {};
+    const { access_token, refresh_token } = tokens.groups;
 
-    // ctx.response?.http?.headers
+    if (!access_token || !refresh_token) {
+      return await Promise.resolve({});
+    }
 
-    // ctx.response?.http?.headers.set(
-    //   "Set-Cookie",
-    //   ["access_token=ffdd443344; HttpOnly; SameSite=None; Secure", "refresh_token=DEF456; HttpOnly; SameSite=None; Secure"]
-    // );
-    // ctx.
+    const refresh_token_verified = verify(refresh_token, env.JWT_SECRET);
+
+    const access_token_verified = verify(access_token, env.JWT_SECRET, (err, payload) => {
+      if (err?.name === "TokenExpiredError") {
+        ctx.response?.http?.headers.set(
+          "Set-Cookie",
+          "tokens=********; HttpOnly; SameSite=None; Secure"
+        );
+        return;
+      }
+
+      if (payload?.exp && payload?.exp > new Date().getTime() + 6e4) {
+        ctx.response?.http?.headers.set(
+          "Set-Cookie",
+          "tokens=********; HttpOnly; SameSite=None; Secure"
+        );
+        return;
+      }
+
+      return refresh_token_verified;
+
+      throw err;
+    });
   },
 };
 

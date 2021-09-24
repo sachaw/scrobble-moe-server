@@ -45,7 +45,7 @@ interface IMEDIA_LIST_QUERY {
   };
 }
 
-export class Anilist extends BaseProvider<"graphql"> {
+export class Kitsu extends BaseProvider<"graphql"> {
   constructor(providerUserId: string, accessToken: string) {
     super("graphql", "https://kitsu.io/api/graphql/", providerUserId, accessToken);
 

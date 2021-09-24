@@ -66,8 +66,8 @@ export class LinkedAccountFindManyInput extends FindManyWithScopeInput {
 
 @InputType()
 export class ProviderLoginUrlInput {
-  @Field(() => Provider)
-  provider: Provider;
+  @Field(() => [Provider])
+  providers: Provider[];
 }
 
 @InputType()
@@ -78,6 +78,9 @@ export class AddLinkedAccountInput {
 
 @ObjectType()
 export class ProviderLoginUrlResponse {
+  @Field(() => Provider)
+  provider: Provider;
+
   @Field()
   url: string;
 }

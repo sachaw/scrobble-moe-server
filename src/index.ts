@@ -54,7 +54,10 @@ const app = async (): Promise<void> => {
     schema,
     context,
     cors: {
-      origin: "https://studio.apollographql.com",
+      origin: [
+        "https://studio.apollographql.com",
+        process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000",
+      ],
       credentials: true,
     },
     plugins: [sentryPlugin, sentryPerformancePlugin, tokenManagementPlugin],

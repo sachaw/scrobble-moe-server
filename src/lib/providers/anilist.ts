@@ -34,6 +34,20 @@ const MEDIA_LIST_MUTATION = gql`
   }
 `;
 
+const USER_ID_QUERY = gql`
+  query Viewer {
+    Viewer {
+      id
+    }
+  }
+`;
+
+interface IUSER_ID_QUERY {
+  Viewer: {
+    id: number;
+  };
+}
+
 interface IMEDIA_LIST_QUERY {
   MediaList: {
     media: {
@@ -48,15 +62,25 @@ interface IMEDIA_LIST_QUERY {
 }
 
 export class Anilist extends BaseProvider<"graphql"> {
-  constructor(providerUserId: string, accessToken: string) {
-    super("graphql", "https://graphql.anilist.co/", providerUserId, accessToken);
+  constructor(accessToken: string, providerUserId?: string) {
+    super("graphql", "https://graphql.anilist.co/", accessToken);
+
+    if (providerUserId) {
+      this.providerUserId = providerUserId;
+    }
 
     this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
   }
 
+  async getUserId(): Promise<string> {
+    const rawData: IUSER_ID_QUERY = await this.client.request(USER_ID_QUERY);
+
+    return rawData.Viewer.id.toString();
+  }
+
   async getEntry(id: number): Promise<ILibraryEntry> {
     const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_QUERY, {
-      userId: this.providerUserId,
+      userId: this.providerUserId ?? (await this.getUserId()),
       mediaId: id,
     });
 
@@ -71,21 +95,20 @@ export class Anilist extends BaseProvider<"graphql"> {
   async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
     const localEntry = entry ?? (await this.getEntry(id));
 
-    if (episode > localEntry.progress) {
-      this.client
-        .request(MEDIA_LIST_MUTATION, {
-          mediaId: id,
-          progress: episode,
-          status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
-        })
-        .then(() => {
-          return ScrobbleStatus.TRACKED;
-        })
-        .catch(() => {
-          return ScrobbleStatus.ERRORED;
-        });
+    if (episode <= localEntry.progress) {
+      return ScrobbleStatus.IGNORED;
     }
-
-    return ScrobbleStatus.IGNORED;
+    return await this.client
+      .request(MEDIA_LIST_MUTATION, {
+        mediaId: id,
+        progress: episode,
+        status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
+      })
+      .then(() => {
+        return ScrobbleStatus.TRACKED;
+      })
+      .catch(() => {
+        return ScrobbleStatus.ERRORED;
+      });
   }
 }

@@ -56,33 +56,34 @@ export class WebhookResolver {
     for (const account of accounts) {
       switch (account.provider) {
         case "ANILIST": {
-          const anilist = new Anilist(account.accountId, account.accessToken);
-          const status = await anilist.setProgress(
-            webhookInput.providerMediaId,
-            webhookInput.episode
-          );
-          void ctx.prisma.scrobble.create({
-            data: {
-              episode: webhookInput.episode,
-              providerMediaId: webhookInput.providerMediaId.toString(),
-              status: {
-                create: {
-                  provider: "ANILIST",
-                  status,
+          const anilist = new Anilist(account.accessToken);
+
+          void anilist
+            .setProgress(webhookInput.providerMediaId, webhookInput.episode)
+            .then(async (status) => {
+              void (await ctx.prisma.scrobble.create({
+                data: {
+                  episode: webhookInput.episode,
+                  providerMediaId: webhookInput.providerMediaId.toString(),
+                  status: {
+                    create: {
+                      provider: "ANILIST",
+                      status,
+                    },
+                  },
+                  server: {
+                    connect: {
+                      id: server.id,
+                    },
+                  },
+                  user: {
+                    connect: {
+                      id: user.id,
+                    },
+                  },
                 },
-              },
-              server: {
-                connect: {
-                  id: server.id,
-                },
-              },
-              user: {
-                connect: {
-                  id: user.id,
-                },
-              },
-            },
-          });
+              }));
+            });
           break;
         }
         case "KITSU": {

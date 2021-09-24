@@ -15,6 +15,7 @@ import {
 
 import { Context } from "../lib/context";
 import { env } from "../lib/env";
+import { Anilist } from "../lib/providers/anilist";
 import { restrictUser } from "./helperTypes";
 import {
   AddLinkedAccountInput,
@@ -72,21 +73,28 @@ export class LinkedAccountResolver {
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Query(() => ProviderLoginUrlResponse)
+  @Query(() => [ProviderLoginUrlResponse])
   providerLoginUrl(
     @Arg("providerLoginUrlInput") providerLoginUrlInput: ProviderLoginUrlInput,
     @Ctx() ctx: Context
-  ): ProviderLoginUrlResponse {
-    switch (providerLoginUrlInput.provider) {
-      case Provider.ANILIST:
-        return {
-          url: `https://anilist.co/api/v2/oauth/authorize?client_id=${env.ANILIST_ID}&redirect_uri=${env.ANILIST_REDIRECT_URL}&response_type=code`,
-        };
-      case Provider.KITSU:
-        return {
-          url: "NOT YET IMPLEMENTED",
-        };
-    }
+  ): ProviderLoginUrlResponse[] {
+    return providerLoginUrlInput.providers.map((provider) => {
+      let url: string;
+
+      switch (provider) {
+        case Provider.ANILIST:
+          url = `https://anilist.co/api/v2/oauth/authorize?client_id=${env.ANILIST_ID}&redirect_uri=${env.ANILIST_REDIRECT_URL}&response_type=code`;
+          break;
+        case Provider.KITSU:
+          url = "NOT YET IMPLEMENTED";
+          break;
+      }
+
+      return {
+        provider,
+        url,
+      };
+    });
   }
 
   @Authorized(Role.ADMIN, Role.USER)
@@ -102,7 +110,7 @@ export class LinkedAccountResolver {
           grant_type: "authorization_code",
           client_id: env.ANILIST_ID,
           client_secret: env.ANILIST_SECRET,
-          redirect_uri: "http://localhost:3000",
+          redirect_uri: "http://localhost:3000/auth/anilist",
           code: addLinkedAccountInput.code,
         },
         {
@@ -120,7 +128,7 @@ export class LinkedAccountResolver {
             case 400:
               throw new AuthenticationError("Expired or already used code provided");
             default:
-              throw new AuthenticationError("Unknown Error");
+              throw new AuthenticationError(error.message);
           }
         } else {
           throw new Error(error.message);
@@ -129,18 +137,28 @@ export class LinkedAccountResolver {
 
     const anilistTokenResponse = anilistToken.data as IAnilistAuthResponse;
 
-    const linkedAccount = await ctx.prisma.linkedAccount.create({
-      data: {
+    const accountId = await new Anilist(anilistTokenResponse.access_token).getUserId();
+
+    const linkedAccount = await ctx.prisma.linkedAccount.upsert({
+      where: {
+        accountId,
+      },
+      create: {
         accessToken: anilistTokenResponse.access_token,
         refreshToken: anilistTokenResponse.refresh_token,
-        accessTokenExpires: new Date(anilistTokenResponse.expires_in),
-        accountId: "abc",
+        accessTokenExpires: new Date(new Date().getTime() + anilistTokenResponse.expires_in * 1000),
+        accountId,
         provider: "ANILIST",
         user: {
           connect: {
             id: ctx.user?.id,
           },
         },
+      },
+      update: {
+        accessToken: anilistTokenResponse.access_token,
+        refreshToken: anilistTokenResponse.refresh_token,
+        accessTokenExpires: new Date(new Date().getTime() + anilistTokenResponse.expires_in * 1000),
       },
     });
 

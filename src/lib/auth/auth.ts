@@ -18,11 +18,21 @@ export class AuthenticationInput {
 }
 
 @ObjectType()
+export class PlexUser {
+  @Field()
+  username: string;
+  @Field()
+  avatar: string;
+}
+
+@ObjectType()
 export class AuthResponse {
   @Field(() => AuthenticationType)
   type: AuthenticationType;
   @Field()
   webauthnOptions: string;
+  @Field(() => PlexUser)
+  plexUser: PlexUser;
 }
 
 @InputType()
@@ -38,14 +48,5 @@ export class WebauthnInput {
 @ObjectType()
 export class TokenResponse {
   @Field()
-  accessToken: string;
-
-  @Field()
-  refreshToken: string;
-
-  @Field()
-  accessTokenExpires: Date;
-
-  @Field()
-  refreshTokenExpires: Date;
+  success: boolean;
 }
