@@ -1,5 +1,6 @@
 import "reflect-metadata";
 
+import { AuthenticationError } from "apollo-server";
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import {
@@ -17,7 +18,6 @@ import {
 import { Context } from "../lib/context";
 import { RequestScope } from "./helperTypes";
 import { User, UserFindManyInput } from "./user";
-import { AuthenticationError } from "apollo-server";
 
 @Resolver(User)
 export class UserResolver {
@@ -107,9 +107,12 @@ export class UserResolver {
     @Arg("userFindManyInput") userFindManyInput: UserFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_User[]> {
+    console.log("tmmp");
+
     if (!ctx.user) {
       throw new AuthenticationError("No user");
     }
+    console.log("catch");
 
     const { requestScope, ...filter } = userFindManyInput;
     if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {

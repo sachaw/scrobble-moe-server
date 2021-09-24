@@ -34,6 +34,7 @@ export const context = async (ctx: ExpressContext): Promise<Context> => {
       /tokens=(?<access_token>[\w-]*\.[\w-]*\.[\w-]*)~(?<refresh_token>[\w-]*\.[\w-]*\.[\w-]*)/
     );
     const tokens = tokenRegex.exec(ctx.req.headers.cookie);
+    console.log(ctx.req.headers.cookie);
 
     if (tokens && tokens.groups) {
       const { access_token, refresh_token } = tokens.groups;

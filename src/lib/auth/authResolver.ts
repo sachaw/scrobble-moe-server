@@ -1,8 +1,8 @@
+import { AuthenticationError } from "apollo-server";
 import base64url from "base64url";
 import { Arg, Ctx, Mutation } from "type-graphql";
 import { decode, encode } from "universal-base64";
 
-import { AuthenticationError } from "@frontendmonster/graphql-utils";
 import { Transport } from "@prisma/client";
 import {
   generateAuthenticationOptions,

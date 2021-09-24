@@ -43,7 +43,12 @@ export class ServerResolver {
   ): Promise<PRISMA_Server[]> {
     const { requestScope, ...filter } = serverFindManyInput;
     if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
-      filter.where.users.every.id.equals = ctx.user.id;
+      filter.where = {
+        ...filter.where,
+        id: {
+          equals: ctx.user.id,
+        },
+      };
     }
 
     return await ctx.prisma.server.findMany(filter);
