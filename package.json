@@ -1,7 +1,8 @@
 {
   "scripts": {
-    "build": "tsc",
-    "start": "prisma generate && ts-node-dev --no-notify --respawn --transpile-only src/index.ts",
+    "build": "prisma generate && tsc",
+    "start": "prisma generate && ts-node src/index.ts",
+    "dev": "prisma generate && ts-node-dev --no-notify --respawn --transpile-only src/index.ts",
     "lint": "prettier --check . && eslint ."
   },
   "dependencies": {
