@@ -34,6 +34,9 @@ export class AuthenticatorResolver {
     @Arg("authenticatorFindManyInput") authenticatorFindManyInput: AuthenticatorFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Authenticator[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.authenticator.findMany(
       restrictUser(authenticatorFindManyInput, ctx.user.role, ctx.user.id)
     );

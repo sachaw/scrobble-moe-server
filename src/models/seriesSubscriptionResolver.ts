@@ -60,6 +60,9 @@ export class SeriesSubscriptionResolver {
     seriesSubscriptionFindManyInput: SeriesSubscriptionFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_SeriesSubscription[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.seriesSubscription.findMany(
       restrictUser(seriesSubscriptionFindManyInput, ctx.user.role, ctx.user.id)
     );

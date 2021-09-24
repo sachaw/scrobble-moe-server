@@ -80,7 +80,7 @@ export abstract class FindManyWithScopeInput extends FindManyInput {
 }
 
 type RestrictUser = <
-  T extends FindManyWithScopeInput & { where: { user: BaseUserFilterWhereInput } }
+  T extends FindManyWithScopeInput & { where?: { user?: BaseUserFilterWhereInput } }
 >(
   filter: T,
   role: Role,
@@ -91,6 +91,7 @@ export const restrictUser: RestrictUser = (filter, role, userId) => {
   if (role === "USER" || requestScope === RequestScope.USER) {
     prismaFilter.where = {
       ...prismaFilter.where,
+      //@ts-ignore - typescript doesn't know about user
       id: {
         equals: userId,
       },

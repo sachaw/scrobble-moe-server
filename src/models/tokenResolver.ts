@@ -34,6 +34,9 @@ export class TokenResolver {
     @Arg("tokenFindManyInput") tokenFindManyInput: TokenFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Token[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.token.findMany(
       restrictUser(tokenFindManyInput, ctx.user.role, ctx.user.id)
     );

@@ -1,6 +1,7 @@
 import { gql } from "graphql-request";
 
 import { BaseProvider, ILibraryEntry } from "./base";
+import { ScrobbleStatus } from ".prisma/client";
 
 const MEDIA_LIST_QUERY = gql`
   query MediaList($userId: Int, $mediaId: Int) {
@@ -47,7 +48,7 @@ interface IMEDIA_LIST_QUERY {
 
 export class Kitsu extends BaseProvider<"graphql"> {
   constructor(providerUserId: string, accessToken: string) {
-    super("graphql", "https://kitsu.io/api/graphql/", providerUserId, accessToken);
+    super("graphql", "https://kitsu.io/api/graphql/", accessToken);
 
     this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
   }
@@ -66,7 +67,7 @@ export class Kitsu extends BaseProvider<"graphql"> {
     });
   }
 
-  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ILibraryEntry> {
+  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
     const localEntry = entry ?? (await this.getEntry(id));
 
     if (episode > localEntry.progress) {
@@ -76,14 +77,14 @@ export class Kitsu extends BaseProvider<"graphql"> {
         status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
       });
 
-      return Promise.resolve({
-        mediaProviderId: (await rawData).MediaList.media.id,
-        progress: (await rawData).MediaList.progress,
-        title: (await rawData).MediaList.media.title.userPreferred,
-        total: (await rawData).MediaList.media.episodes,
-      });
+      // return Promise.resolve({
+      //   mediaProviderId: (await rawData).MediaList.media.id,
+      //   progress: (await rawData).MediaList.progress,
+      //   title: (await rawData).MediaList.media.title.userPreferred,
+      //   total: (await rawData).MediaList.media.episodes,
+      // });
     }
 
-    return Promise.resolve(localEntry);
+    return Promise.resolve(ScrobbleStatus.IGNORED);
   }
 }

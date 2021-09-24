@@ -78,6 +78,9 @@ export class ScrobbleResolver {
     @Arg("scrobbleFindManyInput") scrobbleFindManyInput: ScrobbleFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Scrobble[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.scrobble.findMany(
       restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id)
     );

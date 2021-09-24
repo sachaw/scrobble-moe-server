@@ -8,14 +8,14 @@ const plugin: ApolloServerPlugin = {
     return await Promise.resolve({
       async didEncounterErrors(ctx) {
         if (!ctx.operation) {
-          return;
+          return await Promise.resolve();
         }
         for (const err of ctx.errors) {
           if (err instanceof ApolloError) {
             continue;
           }
           Sentry.withScope((scope) => {
-            scope.setTag("kind", ctx.operation.operation);
+            scope.setTag("kind", ctx.operation?.operation);
             scope.setExtra("query", ctx.request.query);
             scope.setExtra("variables", ctx.request.variables);
             if (err.path) {

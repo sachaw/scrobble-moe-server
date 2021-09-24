@@ -1,5 +1,5 @@
 import axios from "axios";
-import { xml2js } from "xml-js";
+import { ElementCompact, xml2js } from "xml-js";
 
 export interface PlexServer {
   _attributes: {
@@ -21,5 +21,7 @@ export interface PlexServer {
 
 export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
   const serversXML = await axios.get(`https://plex.tv/api/servers?X-Plex-Token=${token}`);
-  return xml2js(serversXML.data, { compact: true }).MediaContainer.Server as PlexServer[];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return (xml2js(serversXML.data, { compact: true }) as ElementCompact).MediaContainer
+    .Server as PlexServer[];
 };

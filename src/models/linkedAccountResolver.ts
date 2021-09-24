@@ -67,6 +67,9 @@ export class LinkedAccountResolver {
     @Arg("linkedAccountFindManyInput") linkedAccountFindManyInput: LinkedAccountFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_LinkedAccount[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.linkedAccount.findMany(
       restrictUser(linkedAccountFindManyInput, ctx.user.role, ctx.user.id)
     );
@@ -103,6 +106,9 @@ export class LinkedAccountResolver {
     @Arg("addLinkedAccountInput") addLinkedAccountInput: AddLinkedAccountInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_LinkedAccount> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     const anilistToken = await axios
       .post(
         "https://anilist.co/api/v2/oauth/token",
@@ -151,7 +157,7 @@ export class LinkedAccountResolver {
         provider: "ANILIST",
         user: {
           connect: {
-            id: ctx.user?.id,
+            id: ctx.user.id,
           },
         },
       },

@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "build": "tsc",
     "start": "prisma generate && ts-node-dev --no-notify --respawn --transpile-only src/index.ts",
     "lint": "prettier --check . && eslint ."
   },
@@ -25,6 +26,7 @@
     "plex-oauth": "^2.0.1",
     "reflect-metadata": "^0.1.13",
     "ts-dotenv": "^0.8.3",
+    "ts-node": "^10.2.1",
     "tslib": "^2.3.1",
     "type-graphql": "^1.1.1",
     "universal-base64": "^2.1.0",

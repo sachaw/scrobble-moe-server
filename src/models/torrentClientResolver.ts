@@ -34,6 +34,9 @@ export class TorrentClientResolver {
     @Arg("torrentClientFindManyInput") torrentClientFindManyInput: TorrentClientFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_TorrentClient[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     return await ctx.prisma.torrentClient.findMany(
       restrictUser(torrentClientFindManyInput, ctx.user.role, ctx.user.id)
     );

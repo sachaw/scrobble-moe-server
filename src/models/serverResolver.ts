@@ -41,6 +41,9 @@ export class ServerResolver {
     @Arg("serverFindManyInput") serverFindManyInput: ServerFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Server[]> {
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
     const { requestScope, ...filter } = serverFindManyInput;
     if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
       filter.where = {
@@ -57,7 +60,10 @@ export class ServerResolver {
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [ServerResult], { nullable: true })
   async getPlexAccountServers(@Ctx() ctx: Context): Promise<ServerResult[]> {
-    const servers = await getPlexServers(ctx.user.plexAuthToken);
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
+    const servers = await getPlexServers(ctx.user.plexAuthToken ?? "");
 
     const response: ServerResult[] = servers.map((server) => ({
       name: server._attributes.name,
@@ -83,7 +89,10 @@ export class ServerResolver {
     @Arg("linkServerInput") linkServerInput: LinkServerInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_Server> {
-    const servers = await getPlexServers(ctx.user.plexAuthToken);
+    if (!ctx.user) {
+      throw new NotFoundError("User not found");
+    }
+    const servers = await getPlexServers(ctx.user.plexAuthToken ?? "");
 
     const serverToLink = servers.find(
       (server) => server._attributes.machineIdentifier === linkServerInput.machineIdentifier
