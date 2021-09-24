@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "ts-node-dev --no-notify --respawn --transpile-only src/index.ts",
+    "start": "prisma generate && ts-node-dev --no-notify --respawn --transpile-only src/index.ts",
     "lint": "prettier --check . && eslint ."
   },
   "dependencies": {
