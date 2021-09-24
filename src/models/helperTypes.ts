@@ -17,10 +17,10 @@ export enum RequestScope {
 @InputType()
 export class RelationFilter {
   @Field({ nullable: true })
-  is: string;
+  is?: string;
 
   @Field({ nullable: true })
-  isNot: string;
+  isNot?: string;
 }
 
 registerEnumType(RequestScope, {
@@ -34,49 +34,49 @@ registerEnumType(Prisma.SortOrder, {
 @InputType()
 export class OrderByFilter {
   @Field(() => Prisma.SortOrder, { nullable: true })
-  id: Prisma.SortOrder;
+  id?: Prisma.SortOrder;
 
   @Field(() => Prisma.SortOrder, { nullable: true })
-  createdAt: Prisma.SortOrder;
+  createdAt?: Prisma.SortOrder;
 
   @Field(() => Prisma.SortOrder, { nullable: true })
-  updatedAt: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
 }
 
 @InputType()
 export class WhereUniqueInput {
   @Field({ nullable: true })
-  id: string;
+  id?: string;
 }
 
 @InputType()
 export class FilterWhereInput {
   @Field(() => StringFilter, { nullable: true })
-  id: StringFilter;
+  id?: StringFilter;
 
   @Field({ nullable: true })
-  createdAt: DateTimeFilter;
+  createdAt?: DateTimeFilter;
 
   @Field({ nullable: true })
-  updatedAt: DateTimeFilter;
+  updatedAt?: DateTimeFilter;
 }
 
 @InputType()
 export abstract class FindManyInput {
   @Field({ nullable: true })
-  take: number;
+  take?: number;
 
   @Field({ nullable: true })
-  skip: number;
+  skip?: number;
 
   @Field(() => OrderByFilter, { nullable: true })
-  orderBy: OrderByFilter;
+  orderBy?: OrderByFilter;
 }
 
 @InputType()
 export abstract class FindManyWithScopeInput extends FindManyInput {
   @Field(() => RequestScope, { nullable: true })
-  requestScope: RequestScope;
+  requestScope?: RequestScope;
 }
 
 type RestrictUser = <
@@ -89,7 +89,12 @@ type RestrictUser = <
 export const restrictUser: RestrictUser = (filter, role, userId) => {
   const { requestScope, ...prismaFilter } = filter;
   if (role === "USER" || requestScope === RequestScope.USER) {
-    prismaFilter.where.user.id.equals = userId;
+    prismaFilter.where = {
+      ...prismaFilter.where,
+      id: {
+        equals: userId,
+      },
+    };
   }
   return prismaFilter;
 };

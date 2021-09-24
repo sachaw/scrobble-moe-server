@@ -3,26 +3,26 @@ import { Field, InputType } from "type-graphql";
 @InputType()
 export class DateTimeFilter {
   @Field({ nullable: true })
-  equals: Date;
+  equals?: Date;
 
   @Field({ nullable: true })
-  in: Date;
+  in?: Date;
 
   @Field({ nullable: true })
-  notIn: Date;
+  notIn?: Date;
 
   @Field({ nullable: true })
-  lt: Date;
+  lt?: Date;
 
   @Field({ nullable: true })
-  lte: Date;
+  lte?: Date;
 
   @Field({ nullable: true })
-  gt: Date;
+  gt?: Date;
 
   @Field({ nullable: true })
-  gte: Date;
+  gte?: Date;
 
   @Field({ nullable: true })
-  not: Date;
+  not?: Date;
 }

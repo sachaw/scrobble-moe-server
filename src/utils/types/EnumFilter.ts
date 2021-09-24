@@ -4,16 +4,16 @@ export const EnumFilter = <T extends object>(Enum: T) => {
   @InputType({ isAbstract: true })
   abstract class AbstractFnClass {
     @Field(() => Enum, { nullable: true })
-    equals: keyof T;
+    equals?: keyof T;
 
     @Field(() => Enum, { nullable: true })
-    in: keyof T;
+    in?: keyof T;
 
     @Field(() => Enum, { nullable: true })
-    notIn: keyof T;
+    notIn?: keyof T;
 
     @Field(() => Enum, { nullable: true })
-    not: keyof T;
+    not?: keyof T;
   }
   return AbstractFnClass;
 };

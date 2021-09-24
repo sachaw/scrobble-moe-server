@@ -23,7 +23,7 @@ export class ScrobbleStatusEnumFilter extends EnumFilter(ScrobbleStatus) {}
 @InputType()
 export class BaseScrobbleProviderStatusFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  status: ScrobbleStatusEnumFilter;
+  status?: ScrobbleStatusEnumFilter;
 }
 
 @InputType()

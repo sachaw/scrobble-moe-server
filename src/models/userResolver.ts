@@ -17,6 +17,7 @@ import {
 import { Context } from "../lib/context";
 import { RequestScope } from "./helperTypes";
 import { User, UserFindManyInput } from "./user";
+import { AuthenticationError } from ".pnpm/apollo-server-errors@3.1.0_graphql@15.6.0/node_modules/apollo-server-errors";
 
 @Resolver(User)
 export class UserResolver {
@@ -106,9 +107,18 @@ export class UserResolver {
     @Arg("userFindManyInput") userFindManyInput: UserFindManyInput,
     @Ctx() ctx: Context
   ): Promise<PRISMA_User[]> {
+    if (!ctx.user) {
+      throw new AuthenticationError("No user");
+    }
+
     const { requestScope, ...filter } = userFindManyInput;
     if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
-      filter.where.id.equals = ctx.user.id;
+      filter.where = {
+        ...filter.where,
+        id: {
+          equals: ctx.user.id,
+        },
+      };
     }
 
     return await ctx.prisma.user.findMany(filter);

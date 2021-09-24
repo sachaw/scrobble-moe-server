@@ -32,49 +32,49 @@ export class RoleEnumFilter extends EnumFilter(Role) {}
 @InputType()
 export class BaseUserFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  username: StringFilter;
+  username?: StringFilter;
 
   @Field({ nullable: true })
-  email: StringFilter;
+  email?: StringFilter;
 
   @Field({ nullable: true })
-  plexId: IntFilter;
+  plexId?: IntFilter;
 
   @Field({ nullable: true })
-  thumb: StringFilter;
+  thumb?: StringFilter;
 
   @Field({ nullable: true })
-  authenticationChallenge: StringFilter;
+  authenticationChallenge?: StringFilter;
 
   @Field({ nullable: true })
-  authenticationChallengeExpiresAt: DateTimeFilter;
+  authenticationChallengeExpiresAt?: DateTimeFilter;
 
   @Field(() => RoleEnumFilter, { nullable: true })
-  role: RoleEnumFilter;
+  role?: RoleEnumFilter;
 }
 
 @InputType()
 export class UserFilterWhereInput extends BaseUserFilterWhereInput {
   @Field(() => AuthenticatorArrayFilter, { nullable: true })
-  authenticators: AuthenticatorArrayFilter;
+  authenticators?: AuthenticatorArrayFilter;
 
   @Field({ nullable: true })
-  accounts: LinkedAccountArrayFilter;
+  accounts?: LinkedAccountArrayFilter;
 
   @Field({ nullable: true })
-  tokens: TokenArrayFilter;
+  tokens?: TokenArrayFilter;
 
   @Field({ nullable: true })
-  scrobbles: ScrobbleArrayFilter;
+  scrobbles?: ScrobbleArrayFilter;
 
   @Field({ nullable: true })
-  servers: ServerArrayFilter;
+  servers?: ServerArrayFilter;
 
   @Field({ nullable: true })
-  torrentClients: TorrentClientArrayFilter;
+  torrentClients?: TorrentClientArrayFilter;
 
   @Field({ nullable: true })
-  seriesSubscriptions: SeriesSubscriptionArrayFilter;
+  seriesSubscriptions?: SeriesSubscriptionArrayFilter;
 }
 
 @InputType()
@@ -83,22 +83,22 @@ export class UserArrayFilter extends ArrayFilter(UserFilterWhereInput) {}
 @InputType()
 export class UserUniqueInput extends WhereUniqueInput {
   @Field({ nullable: true })
-  email: string;
+  email?: string;
 
   @Field({ nullable: true })
-  plexId: number;
+  plexId?: number;
 }
 
 @InputType()
 export class UserFindManyInput extends FindManyWithScopeInput {
   @Field(() => UserFilterWhereInput, { nullable: true })
-  where: UserFilterWhereInput;
+  where?: UserFilterWhereInput;
 
   @Field(() => UserUniqueInput, { nullable: true })
-  cursor: UserUniqueInput;
+  cursor?: UserUniqueInput;
 
   @Field(() => Prisma.UserScalarFieldEnum, { nullable: true })
-  distinct: Prisma.UserScalarFieldEnum;
+  distinct?: Prisma.UserScalarFieldEnum;
 }
 
 @ObjectType()
@@ -125,10 +125,10 @@ export class User {
   thumb: string;
 
   @Field()
-  authenticationChallenge: string;
+  authenticationChallenge?: string;
 
   @Field()
-  authenticationChallengeExpiresAt: Date;
+  authenticationChallengeExpiresAt?: Date;
 
   @Field(() => Role)
   role: Role;

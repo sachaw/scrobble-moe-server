@@ -25,22 +25,22 @@ export class ProviderEnumFilter extends EnumFilter(Provider) {}
 @InputType()
 export class BaseLinkedAccountFilterWhereInput extends FilterWhereInput {
   @Field(() => ProviderEnumFilter, { nullable: true })
-  provider: ProviderEnumFilter;
+  provider?: ProviderEnumFilter;
 
   @Field({ nullable: true })
-  accountId: StringFilter;
+  accountId?: StringFilter;
 
   @Field({ nullable: true })
-  accessTokenExpires: StringFilter;
+  accessTokenExpires?: StringFilter;
 }
 
 @InputType()
 export class LinkedAccountFilterWhereInput extends BaseLinkedAccountFilterWhereInput {
   @Field({ nullable: true })
-  scrobbles: ScrobbleArrayFilter;
+  scrobbles?: ScrobbleArrayFilter;
 
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 }
 
 @InputType()
@@ -49,19 +49,19 @@ export class LinkedAccountArrayFilter extends ArrayFilter(BaseLinkedAccountFilte
 @InputType()
 export class LinkedAccountUniqueInput extends WhereUniqueInput {
   @Field({ nullable: true })
-  accountId: string;
+  accountId?: string;
 }
 
 @InputType()
 export class LinkedAccountFindManyInput extends FindManyWithScopeInput {
   @Field(() => LinkedAccountFilterWhereInput, { nullable: true })
-  where: LinkedAccountFilterWhereInput;
+  where?: LinkedAccountFilterWhereInput;
 
   @Field(() => LinkedAccountUniqueInput, { nullable: true })
-  cursor: LinkedAccountUniqueInput;
+  cursor?: LinkedAccountUniqueInput;
 
   @Field(() => Prisma.LinkedAccountScalarFieldEnum, { nullable: true })
-  distinct: Prisma.LinkedAccountScalarFieldEnum;
+  distinct?: Prisma.LinkedAccountScalarFieldEnum;
 }
 
 @InputType()
@@ -103,7 +103,7 @@ export class LinkedAccount {
   accountId: string;
 
   @Field()
-  accessTokenExpires: string;
+  accessTokenExpires?: string;
 
   @Field(() => [Scrobble])
   scrobbles: Scrobble[];

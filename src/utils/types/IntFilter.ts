@@ -3,26 +3,26 @@ import { Field, InputType } from "type-graphql";
 @InputType()
 export class IntFilter {
   @Field({ nullable: true })
-  equals: number;
+  equals?: number;
 
   @Field({ nullable: true })
-  in: number;
+  in?: number;
 
   @Field({ nullable: true })
-  notIn: number;
+  notIn?: number;
 
   @Field({ nullable: true })
-  lt: number;
+  lt?: number;
 
   @Field({ nullable: true })
-  lte: number;
+  lte?: number;
 
   @Field({ nullable: true })
-  gt: number;
+  gt?: number;
 
   @Field({ nullable: true })
-  gte: number;
+  gte?: number;
 
   @Field({ nullable: true })
-  not: number;
+  not?: number;
 }

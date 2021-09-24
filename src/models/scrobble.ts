@@ -23,25 +23,25 @@ registerEnumType(Prisma.ScrobbleScalarFieldEnum, {
 @InputType()
 export class BaseScrobbleFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  providerMediaId: StringFilter;
+  providerMediaId?: StringFilter;
 
   @Field({ nullable: true })
-  episode: IntFilter;
+  episode?: IntFilter;
 }
 
 @InputType()
 export class ScrobbleFilterWhereInput extends BaseScrobbleFilterWhereInput {
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 
   @Field(() => BaseServerFilterWhereInput, { nullable: true })
-  server: BaseServerFilterWhereInput;
+  server?: BaseServerFilterWhereInput;
 
   @Field(() => LinkedAccountArrayFilter, { nullable: true })
-  accounts: LinkedAccountArrayFilter;
+  accounts?: LinkedAccountArrayFilter;
 
   @Field(() => ScrobbleProviderStatusArrayFilter, { nullable: true })
-  status: ScrobbleProviderStatusArrayFilter;
+  status?: ScrobbleProviderStatusArrayFilter;
 }
 
 @InputType()
@@ -50,13 +50,13 @@ export class ScrobbleArrayFilter extends ArrayFilter(BaseScrobbleFilterWhereInpu
 @InputType()
 export class ScrobbleFindManyInput extends FindManyWithScopeInput {
   @Field(() => ScrobbleFilterWhereInput, { nullable: true })
-  where: ScrobbleFilterWhereInput;
+  where?: ScrobbleFilterWhereInput;
 
   @Field(() => WhereUniqueInput, { nullable: true })
-  cursor: WhereUniqueInput;
+  cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.ScrobbleScalarFieldEnum, { nullable: true })
-  distinct: Prisma.ScrobbleScalarFieldEnum;
+  distinct?: Prisma.ScrobbleScalarFieldEnum;
 }
 
 @ObjectType()

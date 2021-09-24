@@ -4,13 +4,13 @@ export const ArrayFilter = <T>(Filter: ClassType<T>) => {
   @InputType({ isAbstract: true })
   abstract class AbstractFnClass {
     @Field(() => Filter, { nullable: true })
-    every: T;
+    every?: T;
 
     @Field(() => Filter, { nullable: true })
-    some: T;
+    some?: T;
 
     @Field(() => Filter, { nullable: true })
-    none: T;
+    none?: T;
   }
   return AbstractFnClass;
 };

@@ -25,19 +25,19 @@ export class TokenTypeEnumFilter extends EnumFilter(TokenType) {}
 @InputType()
 export class BaseTokenFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  hashedToken: StringFilter;
+  hashedToken?: StringFilter;
 
   @Field({ nullable: true })
-  expiresAt: DateTimeFilter;
+  expiresAt?: DateTimeFilter;
 
   @Field(() => TokenTypeEnumFilter, { nullable: true })
-  type: TokenTypeEnumFilter;
+  type?: TokenTypeEnumFilter;
 }
 
 @InputType()
 export class TokenFilterWhereInput extends BaseTokenFilterWhereInput {
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 }
 
 @InputType()
@@ -46,19 +46,19 @@ export class TokenArrayFilter extends ArrayFilter(BaseTokenFilterWhereInput) {}
 @InputType()
 export class TokenUniqueInput extends WhereUniqueInput {
   @Field({ nullable: true })
-  hashedToken: string;
+  hashedToken?: string;
 }
 
 @InputType()
 export class TokenFindManyInput extends FindManyWithScopeInput {
   @Field(() => TokenFilterWhereInput, { nullable: true })
-  where: TokenFilterWhereInput;
+  where?: TokenFilterWhereInput;
 
   @Field(() => TokenUniqueInput, { nullable: true })
-  cursor: TokenUniqueInput;
+  cursor?: TokenUniqueInput;
 
   @Field(() => Prisma.TokenScalarFieldEnum, { nullable: true })
-  distinct: Prisma.TokenScalarFieldEnum;
+  distinct?: Prisma.TokenScalarFieldEnum;
 }
 
 @ObjectType()

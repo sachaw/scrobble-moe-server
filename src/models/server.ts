@@ -17,22 +17,22 @@ registerEnumType(Prisma.ServerScalarFieldEnum, {
 @InputType()
 export class BaseServerFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  uuid: StringFilter;
+  uuid?: StringFilter;
 
   @Field({ nullable: true })
-  secret: StringFilter;
+  secret?: StringFilter;
 
   @Field({ nullable: true })
-  name: StringFilter;
+  name?: StringFilter;
 }
 
 @InputType()
 export class ServerFilterWhereInput extends BaseServerFilterWhereInput {
   @Field(() => UserArrayFilter, { nullable: true })
-  users: UserArrayFilter;
+  users?: UserArrayFilter;
 
   @Field(() => ScrobbleArrayFilter, { nullable: true })
-  scrobbles: ScrobbleArrayFilter;
+  scrobbles?: ScrobbleArrayFilter;
 }
 
 @InputType()
@@ -41,22 +41,22 @@ export class ServerArrayFilter extends ArrayFilter(BaseServerFilterWhereInput) {
 @InputType()
 export class ServerUniqueInput extends WhereUniqueInput {
   @Field({ nullable: true })
-  uuid: string;
+  uuid?: string;
 
   @Field({ nullable: true })
-  secret: string;
+  secret?: string;
 }
 
 @InputType()
 export class ServerFindManyInput extends FindManyWithScopeInput {
   @Field(() => ServerFilterWhereInput, { nullable: true })
-  where: ServerFilterWhereInput;
+  where?: ServerFilterWhereInput;
 
   @Field(() => ServerUniqueInput, { nullable: true })
-  cursor: ServerUniqueInput;
+  cursor?: ServerUniqueInput;
 
   @Field(() => Prisma.ServerScalarFieldEnum, { nullable: true })
-  distinct: Prisma.ServerScalarFieldEnum;
+  distinct?: Prisma.ServerScalarFieldEnum;
 }
 
 @ObjectType()

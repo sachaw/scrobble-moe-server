@@ -4,8 +4,8 @@ import { Field, InputType } from "type-graphql";
 @InputType()
 export class BytesFilter {
   @Field(() => GraphQLByte, { nullable: true })
-  equals: Buffer;
+  equals?: Buffer;
 
   @Field(() => GraphQLByte, { nullable: true })
-  not: Buffer;
+  not?: Buffer;
 }

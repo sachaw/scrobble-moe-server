@@ -15,34 +15,34 @@ registerEnumType(Prisma.EncoderScalarFieldEnum, {
 @InputType()
 export class BaseEncoderFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  name: StringFilter;
+  name?: StringFilter;
 
   @Field({ nullable: true })
-  rssURL: string;
+  rssURL?: string;
 }
 
 @InputType()
 export class EncoderFilterWhereInput extends BaseEncoderFilterWhereInput {
   @Field(() => SeriesSubscriptionArrayFilter, { nullable: true })
-  userSubscriptions: SeriesSubscriptionArrayFilter;
+  userSubscriptions?: SeriesSubscriptionArrayFilter;
 }
 
 @InputType()
 export class EncoderUniqueInput extends WhereUniqueInput {
   @Field({ nullable: true })
-  name: string;
+  name?: string;
 }
 
 @InputType()
 export class EncoderFindManyInput extends FindManyInput {
   @Field(() => EncoderFilterWhereInput, { nullable: true })
-  where: EncoderFilterWhereInput;
+  where?: EncoderFilterWhereInput;
 
   @Field(() => EncoderUniqueInput, { nullable: true })
-  cursor: EncoderUniqueInput;
+  cursor?: EncoderUniqueInput;
 
   @Field(() => Prisma.EncoderScalarFieldEnum, { nullable: true })
-  distinct: Prisma.EncoderScalarFieldEnum;
+  distinct?: Prisma.EncoderScalarFieldEnum;
 }
 
 @ObjectType()

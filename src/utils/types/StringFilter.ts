@@ -12,38 +12,38 @@ registerEnumType(FilterMode, {
 @InputType()
 export class StringFilter {
   @Field({ nullable: true })
-  equals: string;
+  equals?: string;
 
   @Field({ nullable: true })
-  in: string;
+  in?: string;
 
   @Field({ nullable: true })
-  notIn: string;
+  notIn?: string;
 
   @Field({ nullable: true })
-  lt: string;
+  lt?: string;
 
   @Field({ nullable: true })
-  lte: string;
+  lte?: string;
 
   @Field({ nullable: true })
-  gt: string;
+  gt?: string;
 
   @Field({ nullable: true })
-  gte: string;
+  gte?: string;
 
   @Field({ nullable: true })
-  contains: string;
+  contains?: string;
 
   @Field({ nullable: true })
-  endsWith: string;
+  endsWith?: string;
 
   @Field(() => FilterMode, { nullable: true })
-  mode: "default" | "insensitive";
+  mode?: "default" | "insensitive";
 
   @Field({ nullable: true })
-  not: string;
+  not?: string;
 
   @Field({ nullable: true })
-  startsWith: string;
+  startsWith?: string;
 }

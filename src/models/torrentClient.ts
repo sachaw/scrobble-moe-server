@@ -24,22 +24,22 @@ export class TorrentClientApplicationEnumFilter extends EnumFilter(TorrentClient
 @InputType()
 export class BaseTorrentClientFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  clientUrl: StringFilter;
+  clientUrl?: StringFilter;
 
   @Field({ nullable: true })
-  clientUsername: StringFilter;
+  clientUsername?: StringFilter;
 
   @Field({ nullable: true })
-  clientPassword: StringFilter;
+  clientPassword?: StringFilter;
 }
 
 @InputType()
 export class TorrentClientFilterWhereInput extends BaseTorrentClientFilterWhereInput {
   @Field(() => TorrentClientApplicationEnumFilter, { nullable: true })
-  client: TorrentClientApplicationEnumFilter;
+  client?: TorrentClientApplicationEnumFilter;
 
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 }
 
 @InputType()
@@ -48,13 +48,13 @@ export class TorrentClientArrayFilter extends ArrayFilter(BaseTorrentClientFilte
 @InputType()
 export class TorrentClientFindManyInput extends FindManyWithScopeInput {
   @Field(() => TorrentClientFilterWhereInput, { nullable: true })
-  where: TorrentClientFilterWhereInput;
+  where?: TorrentClientFilterWhereInput;
 
   @Field(() => WhereUniqueInput, { nullable: true })
-  cursor: WhereUniqueInput;
+  cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.TorrentClientScalarFieldEnum, { nullable: true })
-  distinct: Prisma.TorrentClientScalarFieldEnum;
+  distinct?: Prisma.TorrentClientScalarFieldEnum;
 }
 
 @ObjectType()

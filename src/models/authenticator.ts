@@ -27,28 +27,28 @@ export class TransportEnumFilter extends EnumArrayFilter(Transport) {}
 @InputType()
 export class BaseAuthenticatorFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  AAGUID: StringFilter;
+  AAGUID?: StringFilter;
 
   @Field({ nullable: true })
-  credentialID: BytesFilter;
+  credentialID?: BytesFilter;
 
   @Field({ nullable: true })
-  credentialPublicKey: BytesFilter;
+  credentialPublicKey?: BytesFilter;
 
   @Field({ nullable: true })
-  counter: IntFilter;
+  counter?: IntFilter;
 
   @Field({ nullable: true })
-  revoked: boolean;
+  revoked?: boolean;
 
   @Field(() => TransportEnumFilter, { nullable: true })
-  transports: TransportEnumFilter;
+  transports?: TransportEnumFilter;
 }
 
 @InputType()
 export class AuthenticatorFilterWhereInput extends BaseAuthenticatorFilterWhereInput {
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 }
 
 @InputType()
@@ -57,19 +57,19 @@ export class AuthenticatorArrayFilter extends ArrayFilter(BaseAuthenticatorFilte
 @InputType()
 export class AuthenticatorUniqueInput extends WhereUniqueInput {
   @Field(() => GraphQLByte, { nullable: true })
-  credentialID: Buffer;
+  credentialID?: Buffer;
 }
 
 @InputType()
 export class AuthenticatorFindManyInput extends FindManyWithScopeInput {
   @Field(() => AuthenticatorFilterWhereInput, { nullable: true })
-  where: AuthenticatorFilterWhereInput;
+  where?: AuthenticatorFilterWhereInput;
 
   @Field(() => AuthenticatorUniqueInput, { nullable: true })
-  cursor: AuthenticatorUniqueInput;
+  cursor?: AuthenticatorUniqueInput;
 
   @Field(() => Prisma.AuthenticatorScalarFieldEnum, { nullable: true })
-  distinct: Prisma.AuthenticatorScalarFieldEnum;
+  distinct?: Prisma.AuthenticatorScalarFieldEnum;
 }
 
 @ObjectType()

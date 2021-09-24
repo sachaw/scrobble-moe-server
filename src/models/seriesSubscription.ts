@@ -17,22 +17,22 @@ registerEnumType(Prisma.SeriesSubscriptionScalarFieldEnum, {
 @InputType()
 export class BaseSeriesSubscriptionFilterWhereInput extends FilterWhereInput {
   @Field({ nullable: true })
-  nameIncludes: StringFilter;
+  nameIncludes?: StringFilter;
 
   @Field({ nullable: true })
-  nameExcludes: StringFilter;
+  nameExcludes?: StringFilter;
 
   @Field({ nullable: true })
-  providerMediaId: StringFilter;
+  providerMediaId?: StringFilter;
 }
 
 @InputType()
 export class SeriesSubscriptionFilterWhereInput extends BaseSeriesSubscriptionFilterWhereInput {
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
-  user: BaseUserFilterWhereInput;
+  user?: BaseUserFilterWhereInput;
 
   @Field(() => BaseEncoderFilterWhereInput, { nullable: true })
-  encoder: BaseEncoderFilterWhereInput;
+  encoder?: BaseEncoderFilterWhereInput;
 }
 
 @InputType()
@@ -43,13 +43,13 @@ export class SeriesSubscriptionArrayFilter extends ArrayFilter(
 @InputType()
 export class SeriesSubscriptionFindManyInput extends FindManyWithScopeInput {
   @Field(() => SeriesSubscriptionFilterWhereInput, { nullable: true })
-  where: SeriesSubscriptionFilterWhereInput;
+  where?: SeriesSubscriptionFilterWhereInput;
 
   @Field(() => WhereUniqueInput, { nullable: true })
-  cursor: WhereUniqueInput;
+  cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.SeriesSubscriptionScalarFieldEnum, { nullable: true })
-  distinct: Prisma.SeriesSubscriptionScalarFieldEnum;
+  distinct?: Prisma.SeriesSubscriptionScalarFieldEnum;
 }
 
 @ObjectType()
