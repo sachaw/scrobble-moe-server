@@ -61,6 +61,7 @@ const app = async (): Promise<void> => {
       credentials: true,
     },
     plugins: [sentryPlugin, sentryPerformancePlugin, tokenManagementPlugin],
+    introspection: true,
   });
 
   void server.listen({ port: 4000 }, () => console.log(`🚀 Server ready`));
