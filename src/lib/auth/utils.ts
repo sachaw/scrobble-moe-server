@@ -1,5 +1,6 @@
-import { AuthenticationError } from "apollo-server";
 import axios, { AxiosError } from "axios";
+
+import { AuthenticationError } from "@frontendmonster/graphql-utils";
 
 export interface IPlexAccountResponse {
   user: {

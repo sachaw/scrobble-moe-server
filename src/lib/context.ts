@@ -1,48 +1,41 @@
-/**
- * Tmp workaround for `ExpressContext` not being exported from apollo-server
- */
-import { ExpressContext } from "apollo-server-express";
+import { Request, Response } from "express";
 import { verify } from "jsonwebtoken";
 
 import { PrismaClient, User } from "@prisma/client";
-import * as Sentry from "@sentry/node";
-import { Transaction } from "@sentry/types";
 
-import prisma from "./prisma";
+export interface ContextInput {
+  req: Request;
+  res: Response;
+  prisma: PrismaClient;
+}
 
 export interface Context {
   prisma: PrismaClient;
   user?: User;
-  transaction: Transaction;
-  // token: string | JwtPayload | undefined;
   setTokens(token: string): void;
 }
 
-/**
- * Tmp workaround for `ExpressContext` not being exported from apollo-server
- */
-export const context = async (ctx: ExpressContext): Promise<Context> => {
-  const transaction = Sentry.startTransaction({
-    op: "gql",
-    name: "GraphQLTransaction",
-  });
-
+export const context = async (ctx: ContextInput): Promise<Context> => {
   let user: User | undefined;
-
-  if (typeof ctx.req.headers.cookie === "string") {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  if (ctx.req.cookies && ctx.req.cookies.tokens) {
     const tokenRegex = new RegExp(
-      /tokens=(?<access_token>[\w-]*\.[\w-]*\.[\w-]*)~(?<refresh_token>[\w-]*\.[\w-]*\.[\w-]*)/
+      /(?<access_token>[\w-]*\.[\w-]*\.[\w-]*)~(?<refresh_token>[\w-]*\.[\w-]*\.[\w-]*)/
     );
-    const tokens = tokenRegex.exec(ctx.req.headers.cookie);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const tokens = tokenRegex.exec(ctx.req.cookies.tokens);
 
     if (tokens && tokens.groups) {
       const { access_token, refresh_token } = tokens.groups;
+
       const decoded = verify(access_token, process.env.JWT_SECRET ?? "");
-      const tmpUser = await prisma.user.findUnique({
+
+      const tmpUser = await ctx.prisma.user.findUnique({
         where: {
           id: decoded.sub as string,
         },
       });
+
       if (tmpUser) {
         user = tmpUser;
       }
@@ -58,5 +51,5 @@ export const context = async (ctx: ExpressContext): Promise<Context> => {
     });
   };
 
-  return { prisma, transaction, user, setTokens };
+  return { prisma: ctx.prisma, user, setTokens };
 };

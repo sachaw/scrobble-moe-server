@@ -1,14 +1,16 @@
-import "reflect-metadata";
-
-import { ApolloServer } from "apollo-server";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import { getGraphQLParameters, processRequest, sendResult } from "graphql-helix";
 import { buildSchema } from "type-graphql";
 
+import { envelop, useAsyncSchema } from "@envelop/core";
 import { MetadataService } from "@simplewebauthn/server";
 
 import { AuthResolver } from "./lib/auth/authResolver";
 import { context } from "./lib/context";
 import { loadEnv } from "./lib/env";
-import sentry from "./lib/sentry";
+import { prisma } from "./lib/prisma";
 import { WebhookResolver } from "./lib/webhook/webhookResolver";
 import { AuthenticatorResolver } from "./models/authenticatorResolver";
 import { EncoderResolver } from "./models/encoderResolver";
@@ -19,52 +21,79 @@ import { ServerResolver } from "./models/serverResolver";
 import { TokenResolver } from "./models/tokenResolver";
 import { TorrentClientResolver } from "./models/torrentClientResolver";
 import { UserResolver } from "./models/userResolver";
-import sentryPlugin from "./plugins/sentry";
-import sentryPerformancePlugin from "./plugins/sentryPerformance";
-import tokenManagementPlugin from "./plugins/tokenManagement";
 import { authCheck } from "./utils/auth";
 
 loadEnv();
-sentry();
 void MetadataService.initialize().then(() => {
   console.log("🔐 MetadataService initialized");
 });
 
-const app = async (): Promise<void> => {
-  const schema = await buildSchema({
-    resolvers: [
-      AuthResolver,
-      AuthenticatorResolver,
-      EncoderResolver,
-      LinkedAccountResolver,
-      ScrobbleResolver,
-      SeriesSubscriptionResolver,
-      ServerResolver,
-      TokenResolver,
-      TorrentClientResolver,
-      UserResolver,
-      WebhookResolver,
+const getEnveloped = envelop({
+  plugins: [
+    useAsyncSchema(
+      buildSchema({
+        resolvers: [
+          AuthResolver,
+          AuthenticatorResolver,
+          EncoderResolver,
+          LinkedAccountResolver,
+          ScrobbleResolver,
+          SeriesSubscriptionResolver,
+          ServerResolver,
+          TokenResolver,
+          TorrentClientResolver,
+          UserResolver,
+          WebhookResolver,
+        ],
+        authChecker: authCheck,
+        dateScalarMode: "isoDate",
+        scalarsMap: [],
+      })
+    ),
+    // useSentry(),
+    // useLogger(),
+    // useTiming(),
+  ],
+});
+
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    credentials: true,
+    origin: [
+      "https://studio.apollographql.com",
+      process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000",
     ],
-    authChecker: authCheck,
-    dateScalarMode: "isoDate",
-    scalarsMap: [],
-  });
+  })
+);
 
-  const server = new ApolloServer({
+app.use((req, res) => {
+  const { parse, validate, contextFactory, execute, schema } = getEnveloped(
+    context({ req, res, prisma })
+  );
+
+  const { operationName, query, variables } = getGraphQLParameters(req);
+
+  void processRequest({
+    operationName,
+    query,
+    variables,
+    request: req,
     schema,
-    context,
-    cors: {
-      origin: [
-        "https://studio.apollographql.com",
-        process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000",
-      ],
-      credentials: true,
+    parse,
+    validate,
+    execute,
+    contextFactory: () => {
+      return contextFactory();
     },
-    plugins: [sentryPlugin, sentryPerformancePlugin, tokenManagementPlugin],
-    introspection: true,
+  }).then((result) => {
+    void sendResult(result, res);
   });
+});
 
-  void server.listen({ port: 4000 }, () => console.log(`🚀 Server ready`));
-};
-
-void app();
+app.listen(4000, () => {
+  console.log(`🚀 Server ready`);
+});

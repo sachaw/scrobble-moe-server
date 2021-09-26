@@ -1,8 +1,8 @@
 import "reflect-metadata";
 
-import { AuthenticationError } from "apollo-server";
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
+import { AuthenticationError } from "@frontendmonster/graphql-utils";
 import {
   Authenticator,
   LinkedAccount,

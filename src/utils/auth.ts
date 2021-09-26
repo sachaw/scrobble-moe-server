@@ -60,15 +60,17 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
 };
 
 export const authCheck: AuthChecker<Context> = ({ root, args, context, info }, roles) => {
-  const { user } = context;
+  return true;
 
-  if (!user) {
-    return false;
-  }
+  // const { user } = context;
 
-  if (roles.find((r) => r === user.role)) {
-    return true;
-  }
+  // if (!user) {
+  //   return false;
+  // }
 
-  return false;
+  // if (roles.find((r) => r === user.role)) {
+  //   return true;
+  // }
+
+  // return false;
 };

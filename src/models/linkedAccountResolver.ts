@@ -1,10 +1,9 @@
 import "reflect-metadata";
 
-import { AuthenticationError } from "apollo-server";
 import axios, { AxiosError } from "axios";
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 
-import { NotFoundError } from "@frontendmonster/graphql-utils";
+import { AuthenticationError, NotFoundError } from "@frontendmonster/graphql-utils";
 import {
   LinkedAccount as PRISMA_LinkedAccount,
   Provider,
