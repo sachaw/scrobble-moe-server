@@ -4,10 +4,6 @@ export type Env = EnvType<typeof schema>;
 
 export const schema = {
   DATABASE_URL: String,
-  APOLLO_KEY: String,
-  APOLLO_GRAPH_ID: String,
-  APOLLO_GRAPH_VARIANT: String,
-  APOLLO_SCHEMA_REPORTING: Boolean,
   JWT_SECRET: String,
   SENTRY_DSN: String,
   ANILIST_ID: Number,
