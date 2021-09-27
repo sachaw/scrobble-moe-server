@@ -64,7 +64,6 @@ app.use(
   cors({
     credentials: true,
     origin: [
-      "https://studio.apollographql.com",
       process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000",
     ],
   })
