@@ -8,7 +8,7 @@ export class WebhookInput {
   secret: string;
 
   @Field()
-  plexId: number;
+  username: string;
 
   @Field()
   serverUUID: string;

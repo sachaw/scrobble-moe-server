@@ -45,7 +45,7 @@ export abstract class BaseProvider<T extends ClientType> {
 
   protected accessToken: string;
 
-  abstract getEntry(id: number): Promise<ILibraryEntry>;
+  abstract getEntry(id: number): Promise<ILibraryEntry | undefined>;
 
   abstract setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus>;
 }

@@ -29,7 +29,7 @@ export class WebhookResolver {
       };
     }
 
-    const user = server.users.find((user) => user.plexId === webhookInput.plexId);
+    const user = server.users.find((user) => user.username === webhookInput.username);
 
     if (!user) {
       return {

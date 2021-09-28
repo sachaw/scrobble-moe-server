@@ -48,7 +48,7 @@ interface IUSER_ID_QUERY {
   };
 }
 
-interface IMEDIA_LIST_QUERY {
+interface IMediaListResponse {
   MediaList: {
     media: {
       id: number;
@@ -78,31 +78,37 @@ export class Anilist extends BaseProvider<"graphql"> {
     return rawData.Viewer.id.toString();
   }
 
-  async getEntry(id: number): Promise<ILibraryEntry> {
-    const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_QUERY, {
-      userId: this.providerUserId ?? (await this.getUserId()),
-      mediaId: id,
-    });
+  async getEntry(id: number): Promise<ILibraryEntry | undefined> {
+    const rawData: Promise<IMediaListResponse> | false = this.client
+      .request(MEDIA_LIST_QUERY, {
+        userId: this.providerUserId ?? (await this.getUserId()),
+        mediaId: id,
+      })
+      .catch(() => {
+        return;
+      });
 
-    return Promise.resolve({
-      mediaProviderId: (await rawData).MediaList.media.id,
-      progress: (await rawData).MediaList.progress,
-      title: (await rawData).MediaList.media.title.userPreferred,
-      total: (await rawData).MediaList.media.episodes,
-    });
+    return (await rawData)
+      ? Promise.resolve({
+          mediaProviderId: (await rawData).MediaList.media.id,
+          progress: (await rawData).MediaList.progress,
+          title: (await rawData).MediaList.media.title.userPreferred,
+          total: (await rawData).MediaList.media.episodes,
+        })
+      : Promise.resolve(undefined);
   }
 
   async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
     const localEntry = entry ?? (await this.getEntry(id));
 
-    if (episode <= localEntry.progress) {
+    if (localEntry && episode <= localEntry.progress) {
       return ScrobbleStatus.IGNORED;
     }
     return await this.client
       .request(MEDIA_LIST_MUTATION, {
         mediaId: id,
         progress: episode,
-        status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
+        status: localEntry && episode === localEntry.total ? "COMPLETED" : "CURRENT",
       })
       .then(() => {
         return ScrobbleStatus.TRACKED;
