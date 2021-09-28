@@ -96,3 +96,7 @@ app.use((req, res) => {
 app.listen(4000, () => {
   console.log(`🚀 Server ready`);
 });
+
+app.get("/health", (_, res) => {
+  res.status(200);
+});
