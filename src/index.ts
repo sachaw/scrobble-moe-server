@@ -58,6 +58,10 @@ const getEnveloped = envelop({
 
 const app = express();
 
+app.get("/health", (_, res) => {
+  res.sendStatus(200);
+});
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -95,8 +99,4 @@ app.use((req, res) => {
 
 app.listen(4000, () => {
   console.log(`🚀 Server ready`);
-});
-
-app.get("/health", (_, res) => {
-  res.status(200);
 });
