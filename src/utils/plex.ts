@@ -22,6 +22,8 @@ export interface PlexServer {
 export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
   const serversXML = await axios.get(`https://plex.tv/api/servers?X-Plex-Token=${token}`);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  return (xml2js(serversXML.data, { compact: true }) as ElementCompact).MediaContainer
-    .Server as PlexServer[];
+  const servers = (xml2js(serversXML.data, { compact: true }) as ElementCompact).MediaContainer
+    .Server as PlexServer[] | PlexServer;
+
+  return servers instanceof Array ? servers : [servers];
 };
