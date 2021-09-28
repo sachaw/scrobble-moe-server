@@ -28,16 +28,20 @@ export const context = async (ctx: ContextInput): Promise<Context> => {
     if (tokens && tokens.groups) {
       const { access_token, refresh_token } = tokens.groups;
 
-      const decoded = verify(access_token, process.env.JWT_SECRET ?? "");
+      try {
+        const decoded = verify(access_token, process.env.JWT_SECRET ?? "");
 
-      const tmpUser = await ctx.prisma.user.findUnique({
-        where: {
-          id: decoded.sub as string,
-        },
-      });
+        const tmpUser = await ctx.prisma.user.findUnique({
+          where: {
+            id: decoded.sub as string,
+          },
+        });
 
-      if (tmpUser) {
-        user = tmpUser;
+        if (tmpUser) {
+          user = tmpUser;
+        }
+      } catch (error) {
+        ctx.res.clearCookie("tokens");
       }
     }
   }
