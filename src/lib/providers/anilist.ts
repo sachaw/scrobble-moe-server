@@ -21,7 +21,7 @@ const MEDIA_LIST_QUERY = gql`
 
 const MEDIA_EPISODES_QUERY = gql`
   query MediaEpisodes($mediaId: Int) {
-    Media(episode: $mediaId) {
+    Media(id: $mediaId) {
       episodes
     }
   }
