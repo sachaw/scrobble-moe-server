@@ -19,6 +19,14 @@ const MEDIA_LIST_QUERY = gql`
   }
 `;
 
+const MEDIA_EPISODES_QUERY = gql`
+  query MediaEpisodes($mediaId: Int) {
+    Media(episode: $mediaId) {
+      episodes
+    }
+  }
+`;
+
 const MEDIA_LIST_MUTATION = gql`
   mutation SaveMediaListEntry($mediaId: Int, $progress: Int, $status: MediaListStatus) {
     SaveMediaListEntry(mediaId: $mediaId, progress: $progress, status: $status) {
@@ -42,10 +50,20 @@ const USER_ID_QUERY = gql`
   }
 `;
 
-interface IUSER_ID_QUERY {
+interface IUserIdResponse {
   Viewer: {
     id: number;
   };
+}
+
+interface IMediaEpisodesResponse {
+  Media: {
+    episodes: number;
+  };
+}
+
+interface IMediaEpisodesVariables {
+  mediaId: number;
 }
 
 interface IMediaListResponse {
@@ -61,6 +79,11 @@ interface IMediaListResponse {
   };
 }
 
+interface IMediaListVariables {
+  userId: string;
+  mediaId: number;
+}
+
 export class Anilist extends BaseProvider<"graphql"> {
   constructor(accessToken: string, providerUserId?: string) {
     super("graphql", "https://graphql.anilist.co/", accessToken);
@@ -73,14 +96,14 @@ export class Anilist extends BaseProvider<"graphql"> {
   }
 
   async getUserId(): Promise<string> {
-    const rawData: IUSER_ID_QUERY = await this.client.request(USER_ID_QUERY);
+    const rawData = await this.client.request<IUserIdResponse>(USER_ID_QUERY);
 
     return rawData.Viewer.id.toString();
   }
 
   async getEntry(id: number): Promise<ILibraryEntry | undefined> {
-    const rawData: Promise<IMediaListResponse> | false = this.client
-      .request(MEDIA_LIST_QUERY, {
+    const rawData = await this.client
+      .request<IMediaListResponse, IMediaListVariables>(MEDIA_LIST_QUERY, {
         userId: this.providerUserId ?? (await this.getUserId()),
         mediaId: id,
       })
@@ -88,14 +111,27 @@ export class Anilist extends BaseProvider<"graphql"> {
         return;
       });
 
-    return (await rawData)
-      ? Promise.resolve({
-          mediaProviderId: (await rawData).MediaList.media.id,
-          progress: (await rawData).MediaList.progress,
-          title: (await rawData).MediaList.media.title.userPreferred,
-          total: (await rawData).MediaList.media.episodes,
-        })
-      : Promise.resolve(undefined);
+    return Promise.resolve(
+      rawData
+        ? {
+            mediaProviderId: rawData.MediaList.media.id,
+            progress: rawData.MediaList.progress,
+            title: rawData.MediaList.media.title.userPreferred,
+            total: rawData.MediaList.media.episodes,
+          }
+        : undefined
+    );
+  }
+
+  async getEpisodes(id: number): Promise<number> {
+    const rawData: IMediaEpisodesResponse = await this.client.request<
+      IMediaEpisodesResponse,
+      IMediaEpisodesVariables
+    >(MEDIA_EPISODES_QUERY, {
+      mediaId: id,
+    });
+
+    return rawData.Media.episodes;
   }
 
   async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
@@ -104,11 +140,14 @@ export class Anilist extends BaseProvider<"graphql"> {
     if (localEntry && episode <= localEntry.progress) {
       return ScrobbleStatus.IGNORED;
     }
+
+    const totalEpisodes = localEntry?.total ?? (await this.getEpisodes(id));
+
     return await this.client
       .request(MEDIA_LIST_MUTATION, {
         mediaId: id,
         progress: episode,
-        status: localEntry && episode === localEntry.total ? "COMPLETED" : "CURRENT",
+        status: episode === totalEpisodes ? "COMPLETED" : "CURRENT",
       })
       .then(() => {
         return ScrobbleStatus.TRACKED;

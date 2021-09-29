@@ -105,6 +105,11 @@ export class ServerResolver {
         },
         update: {
           name: serverToLink._attributes.name,
+          users: {
+            connect: {
+              id: ctx.user.id,
+            },
+          },
         },
 
         create: {
