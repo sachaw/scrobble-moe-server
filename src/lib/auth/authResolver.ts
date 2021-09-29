@@ -1,5 +1,5 @@
 import base64url from "base64url";
-import { Arg, Ctx, Mutation } from "type-graphql";
+import { Arg, Ctx, Mutation, Query } from "type-graphql";
 import { decode, encode } from "universal-base64";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
@@ -22,6 +22,7 @@ import { generateTokens } from "../../utils/auth";
 import { Context } from "../context";
 import { env } from "../env";
 import {
+  AuthCheckResponse,
   AuthenticationInput,
   AuthenticationType,
   AuthResponse,
@@ -264,5 +265,12 @@ export class AuthResolver {
         };
       }
     }
+  }
+
+  @Query(() => AuthCheckResponse)
+  authCheck(@Ctx() ctx: Context): AuthCheckResponse {
+    return {
+      authenticated: Boolean(ctx.user),
+    };
   }
 }

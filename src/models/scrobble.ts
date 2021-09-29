@@ -14,7 +14,7 @@ import {
   ScrobbleProviderStatusArrayFilter,
 } from "./scrobbleProviderStatus";
 import { BaseServerFilterWhereInput, Server } from "./server";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { BaseUserFilterWhereInput, PublicUser, User } from "./user";
 
 registerEnumType(Prisma.ScrobbleScalarFieldEnum, {
   name: "ScrobbleScalarFieldEnum",
@@ -87,4 +87,67 @@ export class Scrobble {
 
   @Field(() => [ScrobbleProviderStatus])
   status: ScrobbleProviderStatus[];
+}
+
+@ObjectType()
+export class AniListData {
+  @Field()
+  id: number;
+
+  @Field()
+  title: string;
+
+  @Field()
+  type: "ANIME" | "MANGA";
+
+  @Field()
+  status: "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
+
+  @Field()
+  description: string;
+
+  @Field()
+  coverImage: string;
+
+  @Field()
+  bannerImage: string;
+
+  @Field()
+  episodes: number;
+}
+
+@ObjectType()
+export class ScrobbleWithoutRelations {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
+
+  @Field()
+  providerMediaId: string;
+
+  @Field()
+  episode: number;
+}
+
+@ObjectType()
+export class ScrobbleFeed {
+  @Field()
+  providerMediaId: string;
+
+  @Field(() => PublicUser)
+  user: PublicUser;
+
+  @Field(() => AniListData, { nullable: true })
+  anilistData?: AniListData;
+
+  @Field()
+  startEpisode: number;
+
+  @Field()
+  endEpisode: number;
 }

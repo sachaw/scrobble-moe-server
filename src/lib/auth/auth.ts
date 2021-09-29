@@ -21,6 +21,7 @@ export class AuthenticationInput {
 export class PlexUser {
   @Field()
   username: string;
+
   @Field()
   avatar: string;
 }
@@ -29,8 +30,10 @@ export class PlexUser {
 export class AuthResponse {
   @Field(() => AuthenticationType)
   type: AuthenticationType;
+
   @Field()
   webauthnOptions: string;
+
   @Field(() => PlexUser)
   plexUser: PlexUser;
 }
@@ -39,8 +42,10 @@ export class AuthResponse {
 export class WebauthnInput {
   @Field(() => AuthenticationType)
   type: AuthenticationType;
+
   @Field()
   verification: string;
+
   @Field()
   plexToken: string;
 }
@@ -49,4 +54,10 @@ export class WebauthnInput {
 export class TokenResponse {
   @Field()
   success: boolean;
+}
+
+@ObjectType()
+export class AuthCheckResponse {
+  @Field()
+  authenticated: boolean;
 }

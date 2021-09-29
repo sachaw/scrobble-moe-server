@@ -154,3 +154,12 @@ export class User {
   @Field(() => [SeriesSubscription])
   seriesSubscriptions: SeriesSubscription[];
 }
+
+@ObjectType()
+export class PublicUser {
+  @Field()
+  username: string;
+
+  @Field()
+  thumb: string;
+}

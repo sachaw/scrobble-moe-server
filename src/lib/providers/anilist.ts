@@ -1,109 +1,39 @@
-import { gql } from "graphql-request";
-
 import { ScrobbleStatus } from "@prisma/client";
 
+import { AniListData } from "../../models/scrobble";
 import { BaseProvider, ILibraryEntry } from "./base";
-
-const MEDIA_LIST_QUERY = gql`
-  query MediaList($userId: Int, $mediaId: Int) {
-    MediaList(userId: $userId, mediaId: $mediaId) {
-      media {
-        id
-        title {
-          userPreferred
-        }
-        episodes
-      }
-      progress
-    }
-  }
-`;
-
-const MEDIA_EPISODES_QUERY = gql`
-  query MediaEpisodes($mediaId: Int) {
-    Media(id: $mediaId) {
-      episodes
-    }
-  }
-`;
-
-const MEDIA_LIST_MUTATION = gql`
-  mutation SaveMediaListEntry($mediaId: Int, $progress: Int, $status: MediaListStatus) {
-    SaveMediaListEntry(mediaId: $mediaId, progress: $progress, status: $status) {
-      media {
-        id
-        title {
-          userPreferred
-        }
-        episodes
-      }
-      progress
-    }
-  }
-`;
-
-const USER_ID_QUERY = gql`
-  query Viewer {
-    Viewer {
-      id
-    }
-  }
-`;
-
-interface IUserIdResponse {
-  Viewer: {
-    id: number;
-  };
-}
-
-interface IMediaEpisodesResponse {
-  Media: {
-    episodes: number;
-  };
-}
-
-interface IMediaEpisodesVariables {
-  mediaId: number;
-}
-
-interface IMediaListResponse {
-  MediaList: {
-    media: {
-      id: number;
-      title: {
-        userPreferred: string;
-      };
-      episodes: number;
-    };
-    progress: number;
-  };
-}
-
-interface IMediaListVariables {
-  userId: string;
-  mediaId: number;
-}
+import { ISaveMediaListVariables, SAVE_MEDIA_LIST } from "./graphql/mutations/SaveMediaListEntry";
+import { IMediaResponse, IMediaVariables, MEDIA } from "./graphql/queries/media";
+import {
+  IMediaEpisodesResponse,
+  IMediaEpisodesVariables,
+  MEDIA_EPISODES,
+} from "./graphql/queries/mediaEpisodes";
+import { IMediaListResponse, IMediaListVariables, MEDIA_LIST } from "./graphql/queries/mediaList";
+import { IUserIdResponse, USER_ID } from "./graphql/queries/userId";
 
 export class Anilist extends BaseProvider<"graphql"> {
-  constructor(accessToken: string, providerUserId?: string) {
+  constructor(accessToken?: string, providerUserId?: string) {
     super("graphql", "https://graphql.anilist.co/", accessToken);
 
     if (providerUserId) {
       this.providerUserId = providerUserId;
     }
 
-    this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
+    if (accessToken) {
+      this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
+    }
   }
 
   async getUserId(): Promise<string> {
-    const rawData = await this.client.request<IUserIdResponse>(USER_ID_QUERY);
+    const rawData = await this.client.request<IUserIdResponse>(USER_ID);
 
     return rawData.Viewer.id.toString();
   }
 
   async getEntry(id: number): Promise<ILibraryEntry | undefined> {
     const rawData = await this.client
-      .request<IMediaListResponse, IMediaListVariables>(MEDIA_LIST_QUERY, {
+      .request<IMediaListResponse, IMediaListVariables>(MEDIA_LIST, {
         userId: this.providerUserId ?? (await this.getUserId()),
         mediaId: id,
       })
@@ -123,13 +53,32 @@ export class Anilist extends BaseProvider<"graphql"> {
     );
   }
 
-  async getEpisodes(id: number): Promise<number> {
-    const rawData: IMediaEpisodesResponse = await this.client.request<
-      IMediaEpisodesResponse,
-      IMediaEpisodesVariables
-    >(MEDIA_EPISODES_QUERY, {
-      mediaId: id,
+  async getAnimeInfo(ids: number[]): Promise<AniListData[]> {
+    const rawData = await this.client.request<IMediaResponse, IMediaVariables>(MEDIA, {
+      mediaIds: ids,
     });
+
+    return rawData.Page.media.map((media) => {
+      return {
+        id: media.id,
+        title: media.title.romaji,
+        type: media.type,
+        status: media.status,
+        description: media.description,
+        coverImage: media.coverImage.extraLarge,
+        bannerImage: media.bannerImage,
+        episodes: media.episodes,
+      };
+    });
+  }
+
+  async getEpisodes(id: number): Promise<number> {
+    const rawData = await this.client.request<IMediaEpisodesResponse, IMediaEpisodesVariables>(
+      MEDIA_EPISODES,
+      {
+        mediaId: id,
+      }
+    );
 
     return rawData.Media.episodes;
   }
@@ -144,7 +93,7 @@ export class Anilist extends BaseProvider<"graphql"> {
     const totalEpisodes = localEntry?.total ?? (await this.getEpisodes(id));
 
     return await this.client
-      .request(MEDIA_LIST_MUTATION, {
+      .request<IMediaListResponse, ISaveMediaListVariables>(SAVE_MEDIA_LIST, {
         mediaId: id,
         progress: episode,
         status: episode === totalEpisodes ? "COMPLETED" : "CURRENT",

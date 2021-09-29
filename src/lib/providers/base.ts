@@ -18,10 +18,12 @@ type Client<T extends ClientType> = T extends "graphql"
   : never;
 
 export abstract class BaseProvider<T extends ClientType> {
-  constructor(type: T, endpoint: string, accessToken: string) {
+  constructor(type: T, endpoint: string, accessToken?: string) {
     this.clientType = type;
     this.endpoint = endpoint;
-    this.accessToken = accessToken;
+    if (accessToken) {
+      this.accessToken = accessToken;
+    }
 
     switch (this.clientType) {
       case "graphql":

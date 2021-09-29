@@ -13,8 +13,9 @@ import {
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
+import { Anilist } from "../lib/providers/anilist";
 import { restrictUser } from "./helperTypes";
-import { Scrobble, ScrobbleFindManyInput } from "./scrobble";
+import { Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble";
 
 @Resolver(Scrobble)
 export class ScrobbleResolver {
@@ -83,6 +84,71 @@ export class ScrobbleResolver {
     }
     return await ctx.prisma.scrobble.findMany(
       restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id)
+    );
+  }
+
+  @Query(() => [ScrobbleFeed])
+  async latestScrobbles(@Ctx() ctx: Context): Promise<ScrobbleFeed[]> {
+    const scrobbles = await ctx.prisma.scrobble.findMany({
+      take: 50,
+    });
+
+    const scrobbleFeed: Omit<ScrobbleFeed & { userId: string }, "anilistData" | "user">[] = [];
+
+    const searchScrobbleFeed = (providerMediaId: string) => {
+      return scrobbleFeed.findIndex(
+        (scrobbleFeed) => scrobbleFeed.providerMediaId === providerMediaId
+      );
+    };
+
+    scrobbles.map(async (scrobble) => {
+      const index = searchScrobbleFeed(scrobble.providerMediaId);
+
+      if (index === -1) {
+        scrobbleFeed.push({
+          providerMediaId: scrobble.providerMediaId,
+          startEpisode: scrobble.episode,
+          endEpisode: scrobble.episode,
+          userId: scrobble.userId,
+        });
+      } else {
+        if (scrobble.episode > scrobbleFeed[index].endEpisode) {
+          scrobbleFeed[index].endEpisode = scrobble.episode;
+        }
+        if (scrobble.episode < scrobbleFeed[index].startEpisode) {
+          scrobbleFeed[index].startEpisode = scrobble.episode;
+        }
+      }
+    });
+
+    const anilist = new Anilist();
+
+    const ids: number[] = scrobbleFeed.map((scrobbleFeed) =>
+      parseInt(scrobbleFeed.providerMediaId)
+    );
+    const anilistData = await anilist.getAnimeInfo(ids);
+    return Promise.all(
+      scrobbleFeed.map(async (feedItem) => {
+        const { userId, ...entry } = feedItem;
+        const user = await ctx.prisma.user.findUnique({
+          where: {
+            id: userId,
+          },
+        });
+
+        if (!user) {
+          throw new NotFoundError("User not found");
+        }
+
+        return {
+          ...entry,
+          anilistData: anilistData.find((entry) => entry.id === parseInt(feedItem.providerMediaId)),
+          user: {
+            username: user.username,
+            thumb: user.thumb,
+          },
+        };
+      })
     );
   }
 }
