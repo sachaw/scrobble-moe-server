@@ -109,8 +109,8 @@ export class AniListData {
   @Field()
   coverImage: string;
 
-  @Field()
-  bannerImage: string;
+  @Field({ nullable: true })
+  bannerImage?: string;
 
   @Field()
   episodes: number;

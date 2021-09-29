@@ -13,7 +13,7 @@ export interface IMediaResponse {
       coverImage: {
         extraLarge: string;
       };
-      bannerImage: string;
+      bannerImage?: string;
       episodes: number;
     }[];
   };
