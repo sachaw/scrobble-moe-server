@@ -1,16 +1,10 @@
 import "reflect-metadata";
 
 import axios, { AxiosError } from "axios";
-import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 
 import { AuthenticationError, NotFoundError } from "@frontendmonster/graphql-utils";
-import {
-  LinkedAccount as PRISMA_LinkedAccount,
-  Provider,
-  Role,
-  Scrobble,
-  User,
-} from "@prisma/client";
+import { LinkedAccount as PRISMA_LinkedAccount, Provider, Role } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { env } from "../lib/env";
@@ -33,33 +27,6 @@ export interface IAnilistAuthResponse {
 
 @Resolver(LinkedAccount)
 export class LinkedAccountResolver {
-  @FieldResolver()
-  async scrobbles(@Root() linkedAccount: LinkedAccount, @Ctx() ctx: Context): Promise<Scrobble[]> {
-    return await ctx.prisma.linkedAccount
-      .findUnique({
-        where: {
-          id: linkedAccount.id,
-        },
-      })
-      .scrobbles();
-  }
-
-  @FieldResolver()
-  async user(@Root() linkedAccount: LinkedAccount, @Ctx() ctx: Context): Promise<User> {
-    const user = await ctx.prisma.linkedAccount
-      .findUnique({
-        where: {
-          id: linkedAccount.id,
-        },
-      })
-      .user();
-
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-    return user;
-  }
-
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [LinkedAccount])
   async linkedAccounts(
@@ -69,9 +36,13 @@ export class LinkedAccountResolver {
     if (!ctx.user) {
       throw new NotFoundError("User not found");
     }
-    return await ctx.prisma.linkedAccount.findMany(
-      restrictUser(linkedAccountFindManyInput, ctx.user.role, ctx.user.id)
-    );
+    return await ctx.prisma.linkedAccount.findMany({
+      ...restrictUser(linkedAccountFindManyInput, ctx.user.role, ctx.user.id),
+      include: {
+        scrobbles: true,
+        user: true,
+      },
+    });
   }
 
   @Authorized(Role.ADMIN, Role.USER)

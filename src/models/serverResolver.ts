@@ -1,10 +1,10 @@
 import "reflect-metadata";
 
 import cuid from "cuid";
-import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Scrobble, Server as PRISMA_Server, User } from "@prisma/client";
+import { Role, Server as PRISMA_Server } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
@@ -13,28 +13,6 @@ import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./se
 
 @Resolver(Server)
 export class ServerResolver {
-  @FieldResolver()
-  async users(@Root() server: Server, @Ctx() ctx: Context): Promise<User[]> {
-    return await ctx.prisma.server
-      .findUnique({
-        where: {
-          id: server.id,
-        },
-      })
-      .users();
-  }
-
-  @FieldResolver()
-  async scrobbles(@Root() server: Server, @Ctx() ctx: Context): Promise<Scrobble[]> {
-    return await ctx.prisma.server
-      .findUnique({
-        where: {
-          id: server.id,
-        },
-      })
-      .scrobbles();
-  }
-
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Server])
   async servers(
@@ -54,7 +32,13 @@ export class ServerResolver {
       };
     }
 
-    return await ctx.prisma.server.findMany(filter);
+    return await ctx.prisma.server.findMany({
+      ...filter,
+      include: {
+        users: true,
+        scrobbles: true,
+      },
+    });
   }
 
   @Authorized(Role.ADMIN, Role.USER)

@@ -3,13 +3,7 @@ import "reflect-metadata";
 import { Arg, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import {
-  LinkedAccount,
-  Scrobble as PRISMA_Scrobble,
-  ScrobbleProviderStatus,
-  Server,
-  User,
-} from "@prisma/client";
+import { Scrobble as PRISMA_Scrobble } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { anilist, Anilist } from "../lib/providers/anilist";
@@ -18,60 +12,6 @@ import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./sc
 
 @Resolver(Scrobble)
 export class ScrobbleResolver {
-  @FieldResolver()
-  async user(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<User> {
-    const user = await ctx.prisma.scrobble
-      .findUnique({
-        where: {
-          id: scrobble.id,
-        },
-      })
-      .user();
-
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-    return user;
-  }
-
-  @FieldResolver()
-  async server(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<Server> {
-    const server = await ctx.prisma.scrobble
-      .findUnique({
-        where: {
-          id: scrobble.id,
-        },
-      })
-      .server();
-
-    if (!server) {
-      throw new NotFoundError("Server not found");
-    }
-    return server;
-  }
-
-  @FieldResolver()
-  async accounts(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<LinkedAccount[]> {
-    return await ctx.prisma.scrobble
-      .findUnique({
-        where: {
-          id: scrobble.id,
-        },
-      })
-      .accounts();
-  }
-
-  @FieldResolver()
-  async status(@Root() scrobble: Scrobble, @Ctx() ctx: Context): Promise<ScrobbleProviderStatus[]> {
-    return await ctx.prisma.scrobble
-      .findUnique({
-        where: {
-          id: scrobble.id,
-        },
-      })
-      .status();
-  }
-
   @FieldResolver()
   async anilistData(
     @Root() scrobble: Scrobble,
@@ -91,9 +31,15 @@ export class ScrobbleResolver {
     if (!ctx.user) {
       throw new NotFoundError("User not found");
     }
-    return await ctx.prisma.scrobble.findMany(
-      restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id)
-    );
+    return await ctx.prisma.scrobble.findMany({
+      ...restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id),
+      include: {
+        user: true,
+        server: true,
+        accounts: true,
+        status: true,
+      },
+    });
   }
 
   @Query(() => [ScrobbleFeed])

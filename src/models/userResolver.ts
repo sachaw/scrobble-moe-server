@@ -1,19 +1,9 @@
 import "reflect-metadata";
 
-import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
-import {
-  Authenticator,
-  LinkedAccount,
-  Role,
-  Scrobble,
-  SeriesSubscription,
-  Server,
-  Token,
-  TorrentClient,
-  User as PRISMA_User,
-} from "@prisma/client";
+import { Role, User as PRISMA_User } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { RequestScope } from "./helperTypes";
@@ -21,86 +11,6 @@ import { User, UserFindManyInput } from "./user";
 
 @Resolver(User)
 export class UserResolver {
-  @FieldResolver()
-  async authenticators(@Root() user: User, @Ctx() ctx: Context): Promise<Authenticator[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .authenticators();
-  }
-
-  @FieldResolver()
-  async accounts(@Root() user: User, @Ctx() ctx: Context): Promise<LinkedAccount[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .accounts();
-  }
-
-  @FieldResolver()
-  async tokens(@Root() user: User, @Ctx() ctx: Context): Promise<Token[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .tokens();
-  }
-
-  @FieldResolver()
-  async scrobbles(@Root() user: User, @Ctx() ctx: Context): Promise<Scrobble[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .scrobbles();
-  }
-
-  @FieldResolver()
-  async servers(@Root() user: User, @Ctx() ctx: Context): Promise<Server[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .servers();
-  }
-
-  @FieldResolver()
-  async torrentClients(@Root() user: User, @Ctx() ctx: Context): Promise<TorrentClient[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .torrentClients();
-  }
-
-  @FieldResolver()
-  async seriesSubscriptions(
-    @Root() user: User,
-    @Ctx() ctx: Context
-  ): Promise<SeriesSubscription[]> {
-    return await ctx.prisma.user
-      .findUnique({
-        where: {
-          id: user.id,
-        },
-      })
-      .seriesSubscriptions();
-  }
-
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [User])
   async users(
@@ -121,6 +31,17 @@ export class UserResolver {
       };
     }
 
-    return await ctx.prisma.user.findMany(filter);
+    return await ctx.prisma.user.findMany({
+      ...filter,
+      include: {
+        authenticators: true,
+        accounts: true,
+        tokens: true,
+        scrobbles: true,
+        servers: true,
+        torrentClients: true,
+        seriesSubscriptions: true,
+      },
+    });
   }
 }

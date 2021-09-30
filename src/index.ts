@@ -50,9 +50,6 @@ const getEnveloped = envelop({
         scalarsMap: [],
       })
     ),
-    // useSentry(),
-    // useLogger(),
-    // useTiming(),
   ],
 });
 
