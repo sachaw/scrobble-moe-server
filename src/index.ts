@@ -55,7 +55,7 @@ const getEnveloped = envelop({
 
 const app = express();
 
-app.get("/health", (_, res) => {
+app.get("/", (_, res) => {
   res.sendStatus(200);
 });
 
