@@ -1,3 +1,5 @@
+import { createClient } from "redis";
+
 import { ScrobbleStatus } from "@prisma/client";
 
 import { AniListData } from "../../models/scrobble";
@@ -23,9 +25,9 @@ export class Anilist extends BaseProvider<"graphql"> {
     if (accessToken) {
       this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
     }
+    void this.redis.connect();
   }
-
-  private requestCache: { id: number; payload: AniListData }[] = [];
+  private redis = createClient({ url: process.env.REDIS_URL });
 
   async getUserId(): Promise<string> {
     const rawData = await this.client.request<IUserIdResponse>(USER_ID);
@@ -56,16 +58,30 @@ export class Anilist extends BaseProvider<"graphql"> {
   }
 
   async getAnimeInfo(ids: number[]): Promise<AniListData[]> {
-    const unCached = ids.filter((id) => !this.requestCache.find((entry) => entry.id === id));
+    const aniListEntries: AniListData[] = [];
+    const uncachedIds: number[] = [];
+
+    await Promise.all(
+      ids.map(async (id) => {
+        const redisResult = await this.redis.get(id.toString());
+
+        if (redisResult) {
+          aniListEntries.push(JSON.parse(redisResult));
+        } else {
+          uncachedIds.push(id);
+        }
+      })
+    );
+
+    console.log(uncachedIds);
 
     const rawData = await this.client.request<IMediaResponse, IMediaVariables>(MEDIA, {
-      mediaIds: unCached,
+      mediaIds: uncachedIds,
     });
 
-    rawData.Page.media.map((media) => {
-      this.requestCache.push({
-        id: media.id,
-        payload: {
+    await Promise.all(
+      rawData.Page.media.map(async (media) => {
+        const aniListEntry: AniListData = {
           id: media.id,
           title: media.title.romaji,
           type: media.type,
@@ -74,13 +90,13 @@ export class Anilist extends BaseProvider<"graphql"> {
           coverImage: media.coverImage.extraLarge,
           bannerImage: media.bannerImage,
           episodes: media.episodes,
-        },
-      });
-    });
+        };
+        await this.redis.set(media.id.toString(), JSON.stringify(aniListEntry));
+        aniListEntries.push(aniListEntry);
+      })
+    );
 
-    return this.requestCache
-      .filter((entry) => ids.includes(entry.id))
-      .map((entry) => entry.payload);
+    return aniListEntries;
   }
 
   async getEpisodes(id: number): Promise<number> {
