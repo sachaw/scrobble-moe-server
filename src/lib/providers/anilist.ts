@@ -25,6 +25,8 @@ export class Anilist extends BaseProvider<"graphql"> {
     }
   }
 
+  private requestCache: { id: number; payload: AniListData }[] = [];
+
   async getUserId(): Promise<string> {
     const rawData = await this.client.request<IUserIdResponse>(USER_ID);
 
@@ -54,22 +56,31 @@ export class Anilist extends BaseProvider<"graphql"> {
   }
 
   async getAnimeInfo(ids: number[]): Promise<AniListData[]> {
+    const unCached = ids.filter((id) => !this.requestCache.find((entry) => entry.id === id));
+
     const rawData = await this.client.request<IMediaResponse, IMediaVariables>(MEDIA, {
-      mediaIds: ids,
+      mediaIds: unCached,
     });
 
-    return rawData.Page.media.map((media) => {
-      return {
+    rawData.Page.media.map((media) => {
+      this.requestCache.push({
         id: media.id,
-        title: media.title.romaji,
-        type: media.type,
-        status: media.status,
-        description: media.description,
-        coverImage: media.coverImage.extraLarge,
-        bannerImage: media.bannerImage,
-        episodes: media.episodes,
-      };
+        payload: {
+          id: media.id,
+          title: media.title.romaji,
+          type: media.type,
+          status: media.status,
+          description: media.description,
+          coverImage: media.coverImage.extraLarge,
+          bannerImage: media.bannerImage,
+          episodes: media.episodes,
+        },
+      });
     });
+
+    return this.requestCache
+      .filter((entry) => ids.includes(entry.id))
+      .map((entry) => entry.payload);
   }
 
   async getEpisodes(id: number): Promise<number> {
@@ -106,3 +117,5 @@ export class Anilist extends BaseProvider<"graphql"> {
       });
   }
 }
+
+export const anilist = new Anilist();

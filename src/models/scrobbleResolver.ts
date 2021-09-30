@@ -1,11 +1,10 @@
 import "reflect-metadata";
 
-import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import {
   LinkedAccount,
-  Role,
   Scrobble as PRISMA_Scrobble,
   ScrobbleProviderStatus,
   Server,
@@ -13,9 +12,9 @@ import {
 } from "@prisma/client";
 
 import { Context } from "../lib/context";
-import { Anilist } from "../lib/providers/anilist";
+import { anilist, Anilist } from "../lib/providers/anilist";
 import { restrictUser } from "./helperTypes";
-import { Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble";
+import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble";
 
 @Resolver(Scrobble)
 export class ScrobbleResolver {
@@ -73,7 +72,17 @@ export class ScrobbleResolver {
       .status();
   }
 
-  @Authorized(Role.ADMIN, Role.USER)
+  @FieldResolver()
+  async anilistData(
+    @Root() scrobble: Scrobble,
+    @Ctx() ctx: Context
+  ): Promise<AniListData | undefined> {
+    const anilist2 = new Anilist();
+    const aniListData = await anilist2.getAnimeInfo([parseInt(scrobble.providerMediaId)]);
+    return aniListData ? aniListData[0] : undefined;
+  }
+
+  // @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Scrobble])
   async scrobbles(
     @Arg("scrobbleFindManyInput") scrobbleFindManyInput: ScrobbleFindManyInput,
@@ -91,17 +100,20 @@ export class ScrobbleResolver {
   async latestScrobbles(@Ctx() ctx: Context): Promise<ScrobbleFeed[]> {
     const scrobbles = await ctx.prisma.scrobble.findMany({
       take: 50,
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     const scrobbleFeed: Omit<ScrobbleFeed & { userId: string }, "anilistData" | "user">[] = [];
 
-    const searchScrobbleFeed = (providerMediaId: string) => {
+    const searchScrobbleFeed = (providerMediaId: string): number => {
       return scrobbleFeed.findIndex(
         (scrobbleFeed) => scrobbleFeed.providerMediaId === providerMediaId
       );
     };
 
-    scrobbles.map(async (scrobble) => {
+    scrobbles.map((scrobble) => {
       const index = searchScrobbleFeed(scrobble.providerMediaId);
 
       if (index === -1) {
@@ -120,8 +132,6 @@ export class ScrobbleResolver {
         }
       }
     });
-
-    const anilist = new Anilist();
 
     const ids: number[] = scrobbleFeed.map((scrobbleFeed) =>
       parseInt(scrobbleFeed.providerMediaId)

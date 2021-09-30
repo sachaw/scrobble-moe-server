@@ -87,6 +87,9 @@ export class Scrobble {
 
   @Field(() => [ScrobbleProviderStatus])
   status: ScrobbleProviderStatus[];
+
+  @Field(() => AniListData, { nullable: true })
+  anilistData?: AniListData;
 }
 
 @ObjectType()
@@ -114,24 +117,6 @@ export class AniListData {
 
   @Field()
   episodes: number;
-}
-
-@ObjectType()
-export class ScrobbleWithoutRelations {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
-  @Field()
-  providerMediaId: string;
-
-  @Field()
-  episode: number;
 }
 
 @ObjectType()
