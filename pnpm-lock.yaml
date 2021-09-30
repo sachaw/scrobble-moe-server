@@ -44,7 +44,7 @@ specifiers:
   plex-oauth: ^2.0.1
   prettier: ^2.4.1
   prisma: ^3.1.1
-  redis: ^3.1.2
+  redis: ^4.0.0-rc.2
   reflect-metadata: ^0.1.13
   ts-dotenv: ^0.8.3
   ts-node-dev: ^1.1.8
@@ -78,7 +78,7 @@ dependencies:
   graphql-shield: 7.5.0_graphql@15.6.0
   jsonwebtoken: 8.5.1
   plex-oauth: 2.0.1
-  redis: 3.1.2
+  redis: 4.0.0-rc.2
   reflect-metadata: 0.1.13
   ts-dotenv: 0.8.3
   tslib: 2.3.1
@@ -1239,6 +1239,11 @@ packages:
       mimic-response: 1.0.1
     dev: false
 
+  /cluster-key-slot/1.1.0:
+    resolution: {integrity: sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   /color-convert/1.9.3:
     resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
     dependencies:
@@ -1394,11 +1399,6 @@ packages:
   /delayed-stream/1.0.0:
     resolution: {integrity: sha1-3zrhmayt+31ECqrgsp4icrJOxhk=}
     engines: {node: '>=0.4.0'}
-    dev: false
-
-  /denque/1.5.1:
-    resolution: {integrity: sha512-XwE+iZ4D6ZUB7mfYRMb5wByE8L74HCn30FBN7sWnXksWc1LO1bPDl67pBR9o/kC4z/xSNAwkMYcGgqDV3BE3Hw==}
-    engines: {node: '>=0.10'}
     dev: false
 
   /depd/1.1.2:
@@ -2000,6 +2000,11 @@ packages:
   /functional-red-black-tree/1.0.1:
     resolution: {integrity: sha1-GwqzvVU7Kg1jmdKcDj6gslIHgyc=}
     dev: true
+
+  /generic-pool/3.8.2:
+    resolution: {integrity: sha512-nGToKy6p3PAbYQ7p1UlWl6vSPwfwU6TMSWK7TTu+WUY4ZjyZQGniGGt2oNVvyNSpyZYSB43zMXVLcBm08MTMkg==}
+    engines: {node: '>= 4'}
+    dev: false
 
   /gensync/1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -3163,10 +3168,6 @@ packages:
       picomatch: 2.3.0
     dev: true
 
-  /redis-commands/1.7.0:
-    resolution: {integrity: sha512-nJWqw3bTFy21hX/CPKHth6sfhZbdiHP6bTawSgQBlKOVRG7EZkfHbbHwQJnrE4vsQf0CMNE+3gJ4Fmm16vdVlQ==}
-    dev: false
-
   /redis-errors/1.2.0:
     resolution: {integrity: sha1-62LSrbFeTq9GEMBK/hUpOEJQq60=}
     engines: {node: '>=4'}
@@ -3179,14 +3180,14 @@ packages:
       redis-errors: 1.2.0
     dev: false
 
-  /redis/3.1.2:
-    resolution: {integrity: sha512-grn5KoZLr/qrRQVwoSkmzdbw6pwF+/rwODtrOr6vuBRiR/f3rjSTGupbF90Zpqm2oenix8Do6RV7pYEkGwlKkw==}
-    engines: {node: '>=10'}
+  /redis/4.0.0-rc.2:
+    resolution: {integrity: sha512-zhT4Vj0xegPNoGwwJ1eeAuoPSvPkVcGImB84whSiyzy+RCdSqk/Hsw2c72Nr6UBMvq9Evd+vgKy4LGLiDbaVDA==}
+    engines: {node: '>=12'}
     dependencies:
-      denque: 1.5.1
-      redis-commands: 1.7.0
-      redis-errors: 1.2.0
+      cluster-key-slot: 1.1.0
+      generic-pool: 3.8.2
       redis-parser: 3.0.0
+      yallist: 4.0.0
     dev: false
 
   /reflect-metadata/0.1.13:
