@@ -37,7 +37,11 @@ export class UserResolver {
         authenticators: true,
         accounts: true,
         tokens: true,
-        scrobbles: true,
+        scrobbles: {
+          include: {
+            accounts: true,
+          },
+        },
         servers: true,
         torrentClients: true,
         seriesSubscriptions: true,
