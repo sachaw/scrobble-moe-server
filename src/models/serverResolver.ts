@@ -8,7 +8,7 @@ import { Role, Server as PRISMA_Server } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { getPlexServers } from "../utils/plex";
-import { RequestScope } from "./helperTypes";
+import { restrictUserArray } from "./helperTypes";
 import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server";
 
 @Resolver(Server)
@@ -22,18 +22,9 @@ export class ServerResolver {
     if (!ctx.user) {
       throw new NotFoundError("User not found");
     }
-    const { requestScope, ...filter } = serverFindManyInput;
-    if (ctx.user.role === "USER" || requestScope === RequestScope.USER) {
-      filter.where = {
-        ...filter.where,
-        id: {
-          equals: ctx.user.id,
-        },
-      };
-    }
 
     return await ctx.prisma.server.findMany({
-      ...filter,
+      ...restrictUserArray(serverFindManyInput, ctx.user.role, ctx.user.id),
       include: {
         users: true,
         scrobbles: true,

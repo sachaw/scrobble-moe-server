@@ -1,13 +1,13 @@
 import "reflect-metadata";
 
-import { Arg, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Scrobble as PRISMA_Scrobble } from "@prisma/client";
+import { Role, Scrobble as PRISMA_Scrobble } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { anilist, Anilist } from "../lib/providers/anilist";
-import { restrictUser } from "./helperTypes";
+import { restrictUser2 } from "./helperTypes";
 import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble";
 
 @Resolver(Scrobble)
@@ -22,7 +22,7 @@ export class ScrobbleResolver {
     return aniListData ? aniListData[0] : undefined;
   }
 
-  // @Authorized(Role.ADMIN, Role.USER)
+  @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [Scrobble])
   async scrobbles(
     @Arg("scrobbleFindManyInput") scrobbleFindManyInput: ScrobbleFindManyInput,
@@ -31,8 +31,9 @@ export class ScrobbleResolver {
     if (!ctx.user) {
       throw new NotFoundError("User not found");
     }
+
     return await ctx.prisma.scrobble.findMany({
-      ...restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id),
+      ...restrictUser2(scrobbleFindManyInput, ctx.user.role, ctx.user.id),
       include: {
         user: true,
         server: true,

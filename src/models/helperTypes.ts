@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client";
 
 import { DateTimeFilter } from "../utils/types/DateTimeFilter";
 import { StringFilter } from "../utils/types/StringFilter";
-import { BaseUserFilterWhereInput } from "./user";
+import { BaseUserFilterWhereInput, UserArrayFilter } from "./user";
 
 export enum RequestScope {
   GLOBAL,
@@ -94,6 +94,45 @@ export const restrictUser: RestrictUser = (filter, role, userId) => {
       //@ts-ignore - typescript doesn't know about user
       id: {
         equals: userId,
+      },
+    };
+  }
+  return prismaFilter;
+};
+
+export const restrictUser2: RestrictUser = (filter, role, userId) => {
+  const { requestScope, ...prismaFilter } = filter;
+  if (role === "USER" || requestScope === RequestScope.USER) {
+    prismaFilter.where = {
+      ...prismaFilter.where,
+      //@ts-ignore - typescript doesn't know about user
+      userId: {
+        equals: userId,
+      },
+    };
+  }
+  return prismaFilter;
+};
+
+type RestrictUserArray = <
+  T extends FindManyWithScopeInput & { where?: { users?: UserArrayFilter } }
+>(
+  filter: T,
+  role: Role,
+  userId: string
+) => Omit<T, "requestScope">;
+export const restrictUserArray: RestrictUserArray = (filter, role, userId) => {
+  const { requestScope, ...prismaFilter } = filter;
+  if (role === "USER" || requestScope === RequestScope.USER) {
+    prismaFilter.where = {
+      ...prismaFilter.where,
+      //@ts-ignore - typescript doesn't know about user
+      users: {
+        every: {
+          id: {
+            equals: userId,
+          },
+        },
       },
     };
   }
