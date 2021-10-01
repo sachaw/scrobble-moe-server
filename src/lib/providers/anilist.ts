@@ -1,8 +1,7 @@
-import { createClient } from "redis";
-
 import { ScrobbleStatus } from "@prisma/client";
 
 import { AniListData } from "../../models/scrobble";
+import { redis } from "../redis";
 import { BaseProvider, ILibraryEntry } from "./base";
 import { ISaveMediaListVariables, SAVE_MEDIA_LIST } from "./graphql/mutations/SaveMediaListEntry";
 import { IMediaResponse, IMediaVariables, MEDIA } from "./graphql/queries/media";
@@ -25,9 +24,7 @@ export class Anilist extends BaseProvider<"graphql"> {
     if (accessToken) {
       this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
     }
-    void this.redis.connect();
   }
-  private redis = createClient({ url: process.env.REDIS_URL });
 
   async getUserId(): Promise<string> {
     const rawData = await this.client.request<IUserIdResponse>(USER_ID);
@@ -63,7 +60,7 @@ export class Anilist extends BaseProvider<"graphql"> {
 
     await Promise.all(
       ids.map(async (id) => {
-        const redisResult = await this.redis.get(id.toString());
+        const redisResult = await redis.get(id.toString());
 
         if (redisResult) {
           aniListEntries.push(JSON.parse(redisResult));
@@ -72,8 +69,6 @@ export class Anilist extends BaseProvider<"graphql"> {
         }
       })
     );
-
-    console.log(uncachedIds);
 
     const rawData = await this.client.request<IMediaResponse, IMediaVariables>(MEDIA, {
       mediaIds: uncachedIds,
@@ -91,7 +86,7 @@ export class Anilist extends BaseProvider<"graphql"> {
           bannerImage: media.bannerImage,
           episodes: media.episodes,
         };
-        await this.redis.set(media.id.toString(), JSON.stringify(aniListEntry));
+        await redis.set(media.id.toString(), JSON.stringify(aniListEntry));
         aniListEntries.push(aniListEntry);
       })
     );
