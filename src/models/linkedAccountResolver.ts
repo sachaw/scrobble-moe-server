@@ -19,10 +19,20 @@ import {
 } from "./linkedAccount";
 
 export interface IAnilistAuthResponse {
-  token_type: string;
-  expires_in: number;
-  access_token: string;
-  refresh_token: string;
+  data: {
+    token_type: string;
+    expires_in: number;
+    access_token: string;
+    refresh_token: string;
+  };
+}
+
+export interface IAnilistAuthVariables {
+  grant_type: string;
+  client_id: number;
+  client_secret: string;
+  redirect_uri: string;
+  code: string;
 }
 
 @Resolver(LinkedAccount)
@@ -80,7 +90,7 @@ export class LinkedAccountResolver {
       throw new NotFoundError("User not found");
     }
     const anilistToken = await axios
-      .post(
+      .post<IAnilistAuthVariables, IAnilistAuthResponse>(
         "https://anilist.co/api/v2/oauth/token",
         {
           grant_type: "authorization_code",
@@ -111,7 +121,7 @@ export class LinkedAccountResolver {
         }
       });
 
-    const anilistTokenResponse = anilistToken.data as IAnilistAuthResponse;
+    const anilistTokenResponse = anilistToken.data;
 
     const accountId = await new Anilist(anilistTokenResponse.access_token).getUserId();
 
