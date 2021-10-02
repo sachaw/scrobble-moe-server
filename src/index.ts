@@ -65,7 +65,10 @@ app.use(
   cors({
     credentials: true,
     origin: [
-      process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000",
+      "https://scrobble.moe",
+      "https://webhook.scrobble.moe",
+
+      process.env.NODE_ENV !== "production" && "http://localhost:3000",
     ],
   })
 );
