@@ -7,7 +7,7 @@ import { Authenticator as PRISMA_Authenticator, Role } from "@prisma/client";
 
 import { Context } from "../lib/context";
 import { Authenticator, AuthenticatorFindManyInput } from "./authenticator";
-import { restrictUser } from "./helperTypes";
+import { restrictUser2 } from "./helperTypes";
 
 @Resolver(Authenticator)
 export class AuthenticatorResolver {
@@ -21,7 +21,7 @@ export class AuthenticatorResolver {
       throw new NotFoundError("User not found");
     }
     return await ctx.prisma.authenticator.findMany({
-      ...restrictUser(authenticatorFindManyInput, ctx.user.role, ctx.user.id),
+      ...restrictUser2(authenticatorFindManyInput, ctx.user.role, ctx.user.id),
       include: {
         user: true,
       },

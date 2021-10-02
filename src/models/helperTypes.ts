@@ -126,7 +126,6 @@ export const restrictUserArray: RestrictUserArray = (filter, role, userId) => {
   if (role === "USER" || requestScope === RequestScope.USER) {
     prismaFilter.where = {
       ...prismaFilter.where,
-      //@ts-ignore - typescript doesn't know about user
       users: {
         every: {
           id: {

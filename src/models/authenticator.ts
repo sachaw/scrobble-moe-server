@@ -98,8 +98,8 @@ export class Authenticator {
   @Field()
   revoked: boolean;
 
-  @Field(() => Transport)
-  transports: Transport;
+  @Field(() => [Transport])
+  transports: Transport[];
 
   @Field(() => User)
   user: User;
