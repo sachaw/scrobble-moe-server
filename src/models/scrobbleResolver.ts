@@ -7,7 +7,7 @@ import pkg, { Scrobble as PRISMA_Scrobble } from "@prisma/client";
 
 import { Context } from "../lib/context.js";
 import { anilist, Anilist } from "../lib/providers/anilist.js";
-import { restrictUser2 } from "./helperTypes.js";
+import { restrictUser } from "./helperTypes.js";
 import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble.js";
 
 const { Role } = pkg;
@@ -34,7 +34,7 @@ export class ScrobbleResolver {
     }
 
     return await ctx.prisma.scrobble.findMany({
-      ...restrictUser2(scrobbleFindManyInput, ctx.user.role, ctx.user.id),
+      ...restrictUser(scrobbleFindManyInput, ctx.user.role, ctx.user.id),
       include: {
         user: true,
         server: true,

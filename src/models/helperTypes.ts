@@ -88,21 +88,8 @@ type RestrictUser = <
   role: Role,
   userId: string
 ) => Omit<T, "requestScope">;
-export const restrictUser: RestrictUser = (filter, role, userId) => {
-  const { requestScope, ...prismaFilter } = filter;
-  if (role === "USER" || requestScope === RequestScope.USER) {
-    prismaFilter.where = {
-      ...prismaFilter.where,
-      //@ts-ignore - typescript doesn't know about user
-      id: {
-        equals: userId,
-      },
-    };
-  }
-  return prismaFilter;
-};
 
-export const restrictUser2: RestrictUser = (filter, role, userId) => {
+export const restrictUser: RestrictUser = (filter, role, userId) => {
   const { requestScope, ...prismaFilter } = filter;
   if (role === "USER" || requestScope === RequestScope.USER) {
     prismaFilter.where = {

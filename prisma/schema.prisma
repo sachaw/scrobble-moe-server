@@ -150,15 +150,15 @@ model Encoder {
 }
 
 model TorrentClient {
-    id             String   @id @default(cuid())
-    createdAt      DateTime @default(now())
-    updatedAt      DateTime @updatedAt
+    id             String                   @id @default(cuid())
+    createdAt      DateTime                 @default(now())
+    updatedAt      DateTime                 @updatedAt
     clientUrl      String
     clientUsername String
     clientPassword String
+    client         TorrentClientApplication
 
-    client TorrentClientApplication
-    user   User                     @relation(fields: [userId], references: [id])
+    user   User   @relation(fields: [userId], references: [id])
     userId String
 }
 
