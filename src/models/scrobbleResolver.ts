@@ -3,13 +3,14 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Scrobble as PRISMA_Scrobble } from "@prisma/client";
+import pkg, { Scrobble as PRISMA_Scrobble } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { anilist, Anilist } from "../lib/providers/anilist";
-import { restrictUser2 } from "./helperTypes";
-import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble";
+import { Context } from "../lib/context.js";
+import { anilist, Anilist } from "../lib/providers/anilist.js";
+import { restrictUser2 } from "./helperTypes.js";
+import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble.js";
 
+const { Role } = pkg;
 @Resolver(Scrobble)
 export class ScrobbleResolver {
   @FieldResolver()

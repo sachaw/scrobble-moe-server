@@ -4,13 +4,14 @@ import cuid from "cuid";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Server as PRISMA_Server } from "@prisma/client";
+import pkg, { Server as PRISMA_Server } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { getPlexServers } from "../utils/plex";
-import { restrictUserArray } from "./helperTypes";
-import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server";
+import { Context } from "../lib/context.js";
+import { getPlexServers } from "../utils/plex.js";
+import { restrictUserArray } from "./helperTypes.js";
+import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server.js";
 
+const { Role } = pkg;
 @Resolver(Server)
 export class ServerResolver {
   @Authorized(Role.ADMIN, Role.USER)

@@ -2,15 +2,17 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, Provider } from "@prisma/client";
+import type { Prisma as PrismaType, Provider as ProviderType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { EnumFilter } from "../utils/types/EnumFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { EnumFilter } from "../utils/types/EnumFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
+import { BaseUserFilterWhereInput, User } from "./user.js";
 
+const { Prisma, Provider } = pkg;
 registerEnumType(Provider, {
   name: "Provider",
 });
@@ -61,13 +63,13 @@ export class LinkedAccountFindManyInput extends FindManyWithScopeInput {
   cursor?: LinkedAccountUniqueInput;
 
   @Field(() => Prisma.LinkedAccountScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.LinkedAccountScalarFieldEnum;
+  distinct?: PrismaType.LinkedAccountScalarFieldEnum;
 }
 
 @InputType()
 export class ProviderLoginUrlInput {
   @Field(() => [Provider])
-  providers: Provider[];
+  providers: ProviderType[];
 }
 
 @InputType()
@@ -79,7 +81,7 @@ export class AddLinkedAccountInput {
 @ObjectType()
 export class ProviderLoginUrlResponse {
   @Field(() => Provider)
-  provider: Provider;
+  provider: ProviderType;
 
   @Field()
   url: string;
@@ -97,7 +99,7 @@ export class LinkedAccount {
   updatedAt: Date;
 
   @Field(() => Provider)
-  provider: Provider;
+  provider: ProviderType;
 
   @Field()
   accountId: string;

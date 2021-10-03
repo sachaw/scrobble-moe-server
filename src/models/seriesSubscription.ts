@@ -2,14 +2,16 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma as PrismaType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { BaseEncoderFilterWhereInput, Encoder } from "./encoder";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { BaseEncoderFilterWhereInput, Encoder } from "./encoder.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { BaseUserFilterWhereInput, User } from "./user.js";
 
+const { Prisma } = pkg;
 registerEnumType(Prisma.SeriesSubscriptionScalarFieldEnum, {
   name: "SeriesSubscriptionScalarFieldEnum",
 });
@@ -49,7 +51,7 @@ export class SeriesSubscriptionFindManyInput extends FindManyWithScopeInput {
   cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.SeriesSubscriptionScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.SeriesSubscriptionScalarFieldEnum;
+  distinct?: PrismaType.SeriesSubscriptionScalarFieldEnum;
 }
 
 @ObjectType()

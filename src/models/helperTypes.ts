@@ -2,12 +2,14 @@ import "reflect-metadata";
 
 import { Field, InputType, registerEnumType } from "type-graphql";
 
-import type { Role } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import type { Prisma as PrismaType, Role } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { DateTimeFilter } from "../utils/types/DateTimeFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { BaseUserFilterWhereInput, UserArrayFilter } from "./user";
+import { DateTimeFilter } from "../utils/types/DateTimeFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { BaseUserFilterWhereInput, UserArrayFilter } from "./user.js";
+
+const { Prisma } = pkg;
 
 export enum RequestScope {
   GLOBAL,
@@ -34,13 +36,13 @@ registerEnumType(Prisma.SortOrder, {
 @InputType()
 export class OrderByFilter {
   @Field(() => Prisma.SortOrder, { nullable: true })
-  id?: Prisma.SortOrder;
+  id?: PrismaType.SortOrder;
 
   @Field(() => Prisma.SortOrder, { nullable: true })
-  createdAt?: Prisma.SortOrder;
+  createdAt?: PrismaType.SortOrder;
 
   @Field(() => Prisma.SortOrder, { nullable: true })
-  updatedAt?: Prisma.SortOrder;
+  updatedAt?: PrismaType.SortOrder;
 }
 
 @InputType()

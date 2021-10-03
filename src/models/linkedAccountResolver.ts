@@ -4,20 +4,21 @@ import axios, { AxiosError } from "axios";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 
 import { AuthenticationError, NotFoundError } from "@frontendmonster/graphql-utils";
-import { LinkedAccount as PRISMA_LinkedAccount, Provider, Role } from "@prisma/client";
+import pkg, { LinkedAccount as PRISMA_LinkedAccount } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { env } from "../lib/env";
-import { Anilist } from "../lib/providers/anilist";
-import { restrictUser } from "./helperTypes";
+import { Context } from "../lib/context.js";
+import { env } from "../lib/env.js";
+import { Anilist } from "../lib/providers/anilist.js";
+import { restrictUser } from "./helperTypes.js";
 import {
   AddLinkedAccountInput,
   LinkedAccount,
   LinkedAccountFindManyInput,
   ProviderLoginUrlInput,
   ProviderLoginUrlResponse,
-} from "./linkedAccount";
+} from "./linkedAccount.js";
 
+const { Role, Provider } = pkg;
 export interface IAnilistAuthResponse {
   data: {
     token_type: string;

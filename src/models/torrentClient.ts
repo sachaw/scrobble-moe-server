@@ -2,14 +2,19 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, TorrentClientApplication } from "@prisma/client";
+import type {
+  Prisma as PrismaType,
+  TorrentClientApplication as TorrentClientApplicationType,
+} from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { EnumFilter } from "../utils/types/EnumFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { EnumFilter } from "../utils/types/EnumFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { BaseUserFilterWhereInput, User } from "./user.js";
 
+const { Prisma, TorrentClientApplication } = pkg;
 registerEnumType(TorrentClientApplication, {
   name: "TorrentClientApplication",
 });
@@ -54,7 +59,7 @@ export class TorrentClientFindManyInput extends FindManyWithScopeInput {
   cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.TorrentClientScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.TorrentClientScalarFieldEnum;
+  distinct?: PrismaType.TorrentClientScalarFieldEnum;
 }
 
 @ObjectType()
@@ -78,7 +83,7 @@ export class TorrentClient {
   clientPassword: string;
 
   @Field(() => TorrentClientApplication)
-  client: TorrentClientApplication;
+  client: TorrentClientApplicationType;
 
   @Field(() => User)
   user: User;

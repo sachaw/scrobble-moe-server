@@ -3,16 +3,18 @@ import "reflect-metadata";
 import { GraphQLByte } from "graphql-scalars";
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, Transport } from "@prisma/client";
+import type { Prisma as PrismaType, Transport as TransportType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { BytesFilter } from "../utils/types/BytesFilter";
-import { EnumArrayFilter } from "../utils/types/EnumArrayFilter";
-import { IntFilter } from "../utils/types/IntFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { BytesFilter } from "../utils/types/BytesFilter.js";
+import { EnumArrayFilter } from "../utils/types/EnumArrayFilter.js";
+import { IntFilter } from "../utils/types/IntFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { BaseUserFilterWhereInput, User } from "./user.js";
 
+const { Prisma, Transport } = pkg;
 registerEnumType(Transport, {
   name: "Transport",
 });
@@ -69,7 +71,7 @@ export class AuthenticatorFindManyInput extends FindManyWithScopeInput {
   cursor?: AuthenticatorUniqueInput;
 
   @Field(() => Prisma.AuthenticatorScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.AuthenticatorScalarFieldEnum;
+  distinct?: PrismaType.AuthenticatorScalarFieldEnum;
 }
 
 @ObjectType()
@@ -99,7 +101,7 @@ export class Authenticator {
   revoked: boolean;
 
   @Field(() => [Transport])
-  transports: Transport[];
+  transports: TransportType[];
 
   @Field(() => User)
   user: User;

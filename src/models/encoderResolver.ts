@@ -2,11 +2,12 @@ import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
-import { Encoder as PRISMA_Encoder, Role } from "@prisma/client";
+import pkg, { Encoder as PRISMA_Encoder } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { Encoder, EncoderFindManyInput } from "./encoder";
+import { Context } from "../lib/context.js";
+import { Encoder, EncoderFindManyInput } from "./encoder.js";
 
+const { Role } = pkg;
 @Resolver(Encoder)
 export class EncoderResolver {
   @Authorized(Role.ADMIN, Role.USER)

@@ -1,17 +1,27 @@
-import { ScrobbleStatus } from "@prisma/client";
+import type { ScrobbleStatus as ScrobbleStatusType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { AniListData } from "../../models/scrobble";
-import { redis } from "../redis";
-import { BaseProvider, ILibraryEntry } from "./base";
-import { ISaveMediaListVariables, SAVE_MEDIA_LIST } from "./graphql/mutations/SaveMediaListEntry";
-import { IMediaResponse, IMediaVariables, MEDIA } from "./graphql/queries/media";
+import { AniListData } from "../../models/scrobble.js";
+import { redis } from "../redis.js";
+import { BaseProvider, ILibraryEntry } from "./base.js";
+import {
+  ISaveMediaListVariables,
+  SAVE_MEDIA_LIST,
+} from "./graphql/mutations/SaveMediaListEntry.js";
+import { IMediaResponse, IMediaVariables, MEDIA } from "./graphql/queries/media.js";
 import {
   IMediaEpisodesResponse,
   IMediaEpisodesVariables,
   MEDIA_EPISODES,
-} from "./graphql/queries/mediaEpisodes";
-import { IMediaListResponse, IMediaListVariables, MEDIA_LIST } from "./graphql/queries/mediaList";
-import { IUserIdResponse, USER_ID } from "./graphql/queries/userId";
+} from "./graphql/queries/mediaEpisodes.js";
+import {
+  IMediaListResponse,
+  IMediaListVariables,
+  MEDIA_LIST,
+} from "./graphql/queries/mediaList.js";
+import { IUserIdResponse, USER_ID } from "./graphql/queries/userId.js";
+
+const { ScrobbleStatus } = pkg;
 
 export class Anilist extends BaseProvider<"graphql"> {
   constructor(accessToken?: string, providerUserId?: string) {
@@ -105,7 +115,11 @@ export class Anilist extends BaseProvider<"graphql"> {
     return rawData.Media.episodes;
   }
 
-  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
+  async setProgress(
+    id: number,
+    episode: number,
+    entry?: ILibraryEntry
+  ): Promise<ScrobbleStatusType> {
     const localEntry = entry ?? (await this.getEntry(id));
 
     if (localEntry && episode <= localEntry.progress) {

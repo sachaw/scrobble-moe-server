@@ -1,7 +1,8 @@
 import { gql } from "graphql-request";
 
-import { BaseProvider, ILibraryEntry } from "./base";
-import { ScrobbleStatus } from ".prisma/client";
+import { ScrobbleStatus } from "@prisma/client";
+
+import { BaseProvider, ILibraryEntry } from "./base.js";
 
 const MEDIA_LIST_QUERY = gql`
   query MediaList($userId: Int, $mediaId: Int) {

@@ -3,7 +3,7 @@ import { Arg, Ctx, Mutation, Query } from "type-graphql";
 import { decode, encode } from "universal-base64";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
-import { Transport } from "@prisma/client";
+import { Transport as TransportType } from "@prisma/client";
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -18,9 +18,9 @@ import {
   RegistrationCredentialJSON,
 } from "@simplewebauthn/typescript-types";
 
-import { generateTokens } from "../../utils/auth";
-import { Context } from "../context";
-import { env } from "../env";
+import { generateTokens } from "../../utils/auth.js";
+import { Context } from "../context.js";
+import { env } from "../env.js";
 import {
   AuthCheckResponse,
   AuthenticationInput,
@@ -28,8 +28,8 @@ import {
   AuthResponse,
   TokenResponse,
   WebauthnInput,
-} from "./auth";
-import { getPlexAccount } from "./utils";
+} from "./auth.js";
+import { getPlexAccount } from "./utils.js";
 
 export class AuthResolver {
   @Mutation(() => AuthResponse)
@@ -195,7 +195,7 @@ export class AuthResolver {
             revoked: false,
             transports:
               authenticatorData.transports?.map((transport) => {
-                return transport.toUpperCase() as Transport;
+                return transport.toUpperCase() as TransportType;
               }) ?? [],
             user: {
               connect: {

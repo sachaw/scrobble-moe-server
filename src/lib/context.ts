@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
-import { verify } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
 
 import { PrismaClient, User } from "@prisma/client";
+import { Request, Response } from "@tinyhttp/app";
 
 export interface ContextInput {
   req: Request;
@@ -18,6 +18,7 @@ export interface Context {
 export const context = async (ctx: ContextInput): Promise<Context> => {
   let user: User | undefined;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
   if (ctx.req.cookies && ctx.req.cookies.tokens) {
     const tokenRegex = new RegExp(
       /(?<access_token>[\w-]*\.[\w-]*\.[\w-]*)~(?<refresh_token>[\w-]*\.[\w-]*\.[\w-]*)/
@@ -29,7 +30,7 @@ export const context = async (ctx: ContextInput): Promise<Context> => {
       const { access_token, refresh_token } = tokens.groups;
 
       try {
-        const decoded = verify(access_token, process.env.JWT_SECRET ?? "");
+        const decoded = jsonwebtoken.verify(access_token, process.env.JWT_SECRET ?? "");
 
         const tmpUser = await ctx.prisma.user.findUnique({
           where: {

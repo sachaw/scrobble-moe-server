@@ -3,12 +3,13 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, SeriesSubscription as PRISMA_SeriesSubscription } from "@prisma/client";
+import pkg, { SeriesSubscription as PRISMA_SeriesSubscription } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { restrictUser } from "./helperTypes";
-import { SeriesSubscription, SeriesSubscriptionFindManyInput } from "./seriesSubscription";
+import { Context } from "../lib/context.js";
+import { restrictUser } from "./helperTypes.js";
+import { SeriesSubscription, SeriesSubscriptionFindManyInput } from "./seriesSubscription.js";
 
+const { Role } = pkg;
 @Resolver(SeriesSubscription)
 export class SeriesSubscriptionResolver {
   @Authorized(Role.ADMIN, Role.USER)

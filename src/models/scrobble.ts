@@ -2,19 +2,22 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma as PrismaType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { IntFilter } from "../utils/types/IntFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { IntFilter } from "../utils/types/IntFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount.js";
 import {
   ScrobbleProviderStatus,
   ScrobbleProviderStatusArrayFilter,
-} from "./scrobbleProviderStatus";
-import { BaseServerFilterWhereInput, Server } from "./server";
-import { BaseUserFilterWhereInput, PublicUser, User } from "./user";
+} from "./scrobbleProviderStatus.js";
+import { BaseServerFilterWhereInput, Server } from "./server.js";
+import { BaseUserFilterWhereInput, PublicUser, User } from "./user.js";
+
+const { Prisma } = pkg;
 
 registerEnumType(Prisma.ScrobbleScalarFieldEnum, {
   name: "ScrobbleScalarFieldEnum",
@@ -56,7 +59,7 @@ export class ScrobbleFindManyInput extends FindManyWithScopeInput {
   cursor?: WhereUniqueInput;
 
   @Field(() => Prisma.ScrobbleScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.ScrobbleScalarFieldEnum;
+  distinct?: PrismaType.ScrobbleScalarFieldEnum;
 }
 
 @ObjectType()

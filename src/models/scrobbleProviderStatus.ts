@@ -2,12 +2,18 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Provider, ScrobbleStatus } from "@prisma/client";
+import type {
+  Provider as ProviderType,
+  ScrobbleStatus as ScrobbleStatusType,
+} from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { EnumFilter } from "../utils/types/EnumFilter";
-import { FilterWhereInput } from "./helperTypes";
-import { Scrobble } from "./scrobble";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { EnumFilter } from "../utils/types/EnumFilter.js";
+import { FilterWhereInput } from "./helperTypes.js";
+import { Scrobble } from "./scrobble.js";
+
+const { Provider, ScrobbleStatus } = pkg;
 
 registerEnumType(ScrobbleStatus, {
   name: "ScrobbleStatus",
@@ -43,10 +49,10 @@ export class ScrobbleProviderStatus {
   updatedAt: Date;
 
   @Field(() => ScrobbleStatus)
-  status: ScrobbleStatus;
+  status: ScrobbleStatusType;
 
   @Field(() => Provider)
-  provider: Provider;
+  provider: ProviderType;
 
   @Field(() => Scrobble)
   scrobble: Scrobble;

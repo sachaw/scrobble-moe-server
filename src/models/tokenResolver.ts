@@ -3,12 +3,13 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, Token as PRISMA_Token } from "@prisma/client";
+import pkg, { Token as PRISMA_Token } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { restrictUser } from "./helperTypes";
-import { Token, TokenFindManyInput } from "./token";
+import { Context } from "../lib/context.js";
+import { restrictUser } from "./helperTypes.js";
+import { Token, TokenFindManyInput } from "./token.js";
 
+const { Role } = pkg;
 @Resolver(Token)
 export class TokenResolver {
   @Authorized(Role.ADMIN, Role.USER)

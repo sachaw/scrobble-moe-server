@@ -2,9 +2,9 @@ import "reflect-metadata";
 
 import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
 
-import { Context } from "../context";
-import { Anilist } from "../providers/anilist";
-import { Webhook, WebhookInput } from "./webhook";
+import { Context } from "../context.js";
+import { Anilist } from "../providers/anilist.js";
+import { Webhook, WebhookInput } from "./webhook.js";
 
 @Resolver(Webhook)
 export class WebhookResolver {

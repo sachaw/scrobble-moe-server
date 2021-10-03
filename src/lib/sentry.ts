@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/node";
 
-import { env } from "./env";
+import { env } from "./env.js";
 
 const sentry = (): void => {
   return Sentry.init({

@@ -2,13 +2,16 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma as PrismaType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
-import { User, UserArrayFilter } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
+import { User, UserArrayFilter } from "./user.js";
+
+const { Prisma } = pkg;
 
 registerEnumType(Prisma.ServerScalarFieldEnum, {
   name: "ServerScalarFieldEnum",
@@ -56,7 +59,7 @@ export class ServerFindManyInput extends FindManyWithScopeInput {
   cursor?: ServerUniqueInput;
 
   @Field(() => Prisma.ServerScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.ServerScalarFieldEnum;
+  distinct?: PrismaType.ServerScalarFieldEnum;
 }
 
 @ObjectType()

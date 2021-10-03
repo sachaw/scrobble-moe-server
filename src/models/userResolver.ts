@@ -3,12 +3,13 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
-import { Role, User as PRISMA_User } from "@prisma/client";
+import pkg, { User as PRISMA_User } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { RequestScope } from "./helperTypes";
-import { User, UserFindManyInput } from "./user";
+import { Context } from "../lib/context.js";
+import { RequestScope } from "./helperTypes.js";
+import { User, UserFindManyInput } from "./user.js";
 
+const { Role } = pkg;
 @Resolver(User)
 export class UserResolver {
   @Authorized(Role.ADMIN, Role.USER)

@@ -1,17 +1,12 @@
-// @ts-nocheck tmp workaround for global assignment in dev
+import type { PrismaClient } from "@prisma/client";
+import Prisma from "@prisma/client";
 
-import { PrismaClient } from "@prisma/client";
+export let prisma: PrismaClient;
 
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === "production") {
-  prisma = new PrismaClient();
+if (Prisma === undefined) {
+  import("@prisma/client").then(({ PrismaClient }) => {
+    prisma = new PrismaClient();
+  });
 } else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  prisma = global.prisma;
+  prisma = new Prisma.PrismaClient();
 }
-
-export const prisma = prisma;

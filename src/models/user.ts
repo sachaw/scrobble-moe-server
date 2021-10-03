@@ -2,22 +2,24 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, Role } from "@prisma/client";
+import type { Prisma as PrismaType, Role as RoleType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { DateTimeFilter } from "../utils/types/DateTimeFilter";
-import { EnumFilter } from "../utils/types/EnumFilter";
-import { IntFilter } from "../utils/types/IntFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { Authenticator, AuthenticatorArrayFilter } from "./authenticator";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount";
-import { Scrobble, ScrobbleArrayFilter } from "./scrobble";
-import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription";
-import { Server, ServerArrayFilter } from "./server";
-import { Token, TokenArrayFilter } from "./token";
-import { TorrentClient, TorrentClientArrayFilter } from "./torrentClient";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { DateTimeFilter } from "../utils/types/DateTimeFilter.js";
+import { EnumFilter } from "../utils/types/EnumFilter.js";
+import { IntFilter } from "../utils/types/IntFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { Authenticator, AuthenticatorArrayFilter } from "./authenticator.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount.js";
+import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
+import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription.js";
+import { Server, ServerArrayFilter } from "./server.js";
+import { Token, TokenArrayFilter } from "./token.js";
+import { TorrentClient, TorrentClientArrayFilter } from "./torrentClient.js";
 
+const { Prisma, Role } = pkg;
 registerEnumType(Role, {
   name: "Role",
 });
@@ -98,7 +100,7 @@ export class UserFindManyInput extends FindManyWithScopeInput {
   cursor?: UserUniqueInput;
 
   @Field(() => Prisma.UserScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.UserScalarFieldEnum;
+  distinct?: PrismaType.UserScalarFieldEnum;
 }
 
 @ObjectType()
@@ -131,7 +133,7 @@ export class User {
   authenticationChallengeExpiresAt?: Date;
 
   @Field(() => Role)
-  role: Role;
+  role: RoleType;
 
   @Field(() => [Authenticator])
   authenticators: Authenticator[];

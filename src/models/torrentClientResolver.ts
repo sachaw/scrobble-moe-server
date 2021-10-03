@@ -3,12 +3,13 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
-import { Role, TorrentClient as PRISMA_TorrentClient } from "@prisma/client";
+import pkg, { TorrentClient as PRISMA_TorrentClient } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { restrictUser } from "./helperTypes";
-import { TorrentClient, TorrentClientFindManyInput } from "./torrentClient";
+import { Context } from "../lib/context.js";
+import { restrictUser } from "./helperTypes.js";
+import { TorrentClient, TorrentClientFindManyInput } from "./torrentClient.js";
 
+const { Role } = pkg;
 @Resolver(TorrentClient)
 export class TorrentClientResolver {
   @Authorized(Role.ADMIN, Role.USER)

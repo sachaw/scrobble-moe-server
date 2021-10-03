@@ -2,15 +2,17 @@ import "reflect-metadata";
 
 import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import { Prisma, TokenType } from "@prisma/client";
+import type { Prisma as PrismaType, TokenType as TokenTypeType } from "@prisma/client";
+import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter";
-import { DateTimeFilter } from "../utils/types/DateTimeFilter";
-import { EnumFilter } from "../utils/types/EnumFilter";
-import { StringFilter } from "../utils/types/StringFilter";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes";
-import { BaseUserFilterWhereInput, User } from "./user";
+import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { DateTimeFilter } from "../utils/types/DateTimeFilter.js";
+import { EnumFilter } from "../utils/types/EnumFilter.js";
+import { StringFilter } from "../utils/types/StringFilter.js";
+import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import { BaseUserFilterWhereInput, User } from "./user.js";
 
+const { Prisma, TokenType } = pkg;
 registerEnumType(TokenType, {
   name: "TokenType",
 });
@@ -58,7 +60,7 @@ export class TokenFindManyInput extends FindManyWithScopeInput {
   cursor?: TokenUniqueInput;
 
   @Field(() => Prisma.TokenScalarFieldEnum, { nullable: true })
-  distinct?: Prisma.TokenScalarFieldEnum;
+  distinct?: PrismaType.TokenScalarFieldEnum;
 }
 
 @ObjectType()
@@ -76,7 +78,7 @@ export class Token {
   expiresAt: Date;
 
   @Field(() => TokenType)
-  type: TokenType;
+  type: TokenTypeType;
 
   @Field(() => User)
   user: User;

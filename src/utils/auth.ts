@@ -1,10 +1,10 @@
-import { sign } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
 import { AuthChecker } from "type-graphql";
 
 import { PrismaClient, User } from "@prisma/client";
 
-import { Context } from "../lib/context";
-import { env } from "../lib/env";
+import { Context } from "../lib/context.js";
+import { env } from "../lib/env.js";
 
 export const generateTokens = async (prisma: PrismaClient, user: User): Promise<string> => {
   const accessTokenExpires = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 3); // 3 days
@@ -28,7 +28,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
     data: {
       userId: user.id,
       type: "ACCESS",
-      hashedToken: sign(
+      hashedToken: jsonwebtoken.sign(
         {
           exp: accessTokenExpires.getTime(),
           sub: user.id,
@@ -44,7 +44,7 @@ export const generateTokens = async (prisma: PrismaClient, user: User): Promise<
     data: {
       userId: user.id,
       type: "REFRESH",
-      hashedToken: sign(
+      hashedToken: jsonwebtoken.sign(
         {
           exp: refreshTokenExpires.getTime(),
           sub: user.id,
