@@ -66,7 +66,8 @@ app
   .use(
     cors({
       credentials: true,
-      origin: ["http://localhost:3000", "https://scrobble.moe", "https://webhook.scrobble.moe"],
+      origin:
+        process.env.NODE_ENV === "production" ? "https://scrobble.moe" : "http://localhost:3000", //["http://localhost:3000", "https://scrobble.moe", "https://webhook.scrobble.moe"]
     })
   )
   .use("/", async (req, res) => {
