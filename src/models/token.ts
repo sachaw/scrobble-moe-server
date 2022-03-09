@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType, TokenType as TokenTypeType } from "@prisma/client";
 import pkg from "@prisma/client";
@@ -9,7 +9,12 @@ import { ArrayFilter } from "../utils/types/ArrayFilter.js";
 import { DateTimeFilter } from "../utils/types/DateTimeFilter.js";
 import { EnumFilter } from "../utils/types/EnumFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { BaseUserFilterWhereInput, User } from "./user.js";
 
 const { Prisma, TokenType } = pkg;
@@ -64,16 +69,7 @@ export class TokenFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class Token {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class Token extends BasePrismaModel {
   @Field()
   expiresAt: Date;
 

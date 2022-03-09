@@ -1,12 +1,17 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType } from "@prisma/client";
 import pkg from "@prisma/client";
 
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription.js";
 
 const { Prisma } = pkg;
@@ -21,6 +26,9 @@ export class BaseEncoderFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   rssURL?: string;
+
+  @Field({ nullable: true })
+  matchRegex?: string;
 }
 
 @InputType()
@@ -48,22 +56,58 @@ export class EncoderFindManyInput extends FindManyInput {
 }
 
 @ObjectType()
-export class Encoder {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class Encoder extends BasePrismaModel {
   @Field()
   name: string;
 
   @Field()
   rssURL: string;
 
+  @Field()
+  matchRegex: string;
+
   @Field(() => [SeriesSubscription])
   userSubscriptions: SeriesSubscription[];
+}
+
+@InputType()
+export class AddEncoderInput {
+  @Field()
+  name: string;
+
+  @Field()
+  rssURL: string;
+
+  @Field()
+  matchRegex: string;
+}
+
+@InputType()
+export class EncoderFeedInput {
+  @Field()
+  id: string;
+}
+
+@ObjectType()
+export class RssItem {
+  @Field()
+  title: string;
+
+  @Field()
+  link: string;
+
+  @Field()
+  pubDate: string;
+
+  @Field()
+  content: string;
+
+  @Field()
+  contentSnippet: string;
+
+  @Field()
+  guid: string;
+
+  @Field()
+  isoDate: string;
 }

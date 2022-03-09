@@ -1,30 +1,169 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
-import type {
-  Prisma as PrismaType,
-  TorrentClientApplication as TorrentClientApplicationType,
-} from "@prisma/client";
+import { TorrentState } from "@ctrl/qbittorrent";
+import type { Prisma as PrismaType } from "@prisma/client";
 import pkg from "@prisma/client";
 
-import { ArrayFilter } from "../utils/types/ArrayFilter.js";
-import { EnumFilter } from "../utils/types/EnumFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { BaseUserFilterWhereInput, User } from "./user.js";
 
-const { Prisma, TorrentClientApplication } = pkg;
-registerEnumType(TorrentClientApplication, {
-  name: "TorrentClientApplication",
-});
+const { Prisma } = pkg;
+
+// export enum TorrentState {
+//   Error = "error",
+//   PausedUP = "pausedUP",
+//   PausedDL = "pausedDL",
+//   QueuedUP = "queuedUP",
+//   QueuedDL = "queuedDL",
+//   Uploading = "uploading",
+//   StalledUP = "stalledUP",
+//   CheckingUP = "checkingUP",
+//   CheckingDL = "checkingDL",
+//   Downloading = "downloading",
+//   StalledDL = "stalledDL",
+//   ForcedDL = "forcedDL",
+//   ForcedUP = "forcedUP",
+//   MetaDL = "metaDL",
+//   Allocating = "allocating",
+//   QueuedForChecking = "queuedForChecking",
+//   CheckingResumeData = "checkingResumeData",
+//   Moving = "moving",
+//   Unknown = "unknown",
+//   MissingFiles = "missingFiles",
+// }
 
 registerEnumType(Prisma.TorrentClientScalarFieldEnum, {
   name: "TorrentClientScalarFieldEnum",
 });
 
-@InputType()
-export class TorrentClientApplicationEnumFilter extends EnumFilter(TorrentClientApplication) {}
+registerEnumType(TorrentState, {
+  name: "TorrentState",
+});
+
+@ObjectType()
+export class Torrent {
+  @Field()
+  name: string;
+
+  @Field()
+  hash: string;
+
+  @Field()
+  magnet_uri: string;
+
+  @Field()
+  added_on: number;
+
+  @Field()
+  size: number;
+
+  @Field()
+  progress: number;
+
+  @Field()
+  dlspeed: number;
+
+  @Field()
+  upspeed: number;
+
+  @Field()
+  priority: number;
+
+  @Field()
+  num_seeds: number;
+
+  @Field()
+  num_complete: number;
+
+  @Field()
+  num_leechs: number;
+
+  @Field()
+  num_incomplete: number;
+
+  @Field()
+  ratio: number;
+
+  @Field()
+  eta: number;
+
+  @Field(() => TorrentState)
+  state: TorrentState;
+
+  @Field()
+  seq_dl: boolean;
+
+  @Field()
+  f_l_piece_prio: boolean;
+
+  @Field()
+  completion_on: number;
+
+  @Field()
+  tracker: string;
+
+  @Field()
+  dl_limit: number;
+
+  @Field()
+  up_limit: number;
+
+  @Field()
+  downloaded: number;
+
+  @Field()
+  uploaded: number;
+
+  @Field()
+  downloaded_session: number;
+
+  @Field()
+  uploaded_session: number;
+
+  @Field()
+  amount_left: number;
+
+  @Field()
+  save_path: string;
+
+  @Field()
+  completed: number;
+
+  @Field()
+  max_ratio: number;
+
+  @Field()
+  max_seeding_time: number;
+
+  @Field()
+  ratio_limit: number;
+
+  @Field()
+  seeding_time_limit: number;
+
+  @Field()
+  seen_complete: number;
+
+  @Field()
+  last_activity: number;
+
+  @Field()
+  total_size: number;
+
+  @Field()
+  time_active: number;
+
+  @Field()
+  category: string;
+}
 
 @InputType()
 export class BaseTorrentClientFilterWhereInput extends FilterWhereInput {
@@ -40,15 +179,9 @@ export class BaseTorrentClientFilterWhereInput extends FilterWhereInput {
 
 @InputType()
 export class TorrentClientFilterWhereInput extends BaseTorrentClientFilterWhereInput {
-  @Field(() => TorrentClientApplicationEnumFilter, { nullable: true })
-  client?: TorrentClientApplicationEnumFilter;
-
   @Field(() => BaseUserFilterWhereInput, { nullable: true })
   user?: BaseUserFilterWhereInput;
 }
-
-@InputType()
-export class TorrentClientArrayFilter extends ArrayFilter(BaseTorrentClientFilterWhereInput) {}
 
 @InputType()
 export class TorrentClientFindManyInput extends FindManyWithScopeInput {
@@ -63,16 +196,7 @@ export class TorrentClientFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class TorrentClient {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class TorrentClient extends BasePrismaModel {
   @Field()
   clientUrl: string;
 
@@ -82,9 +206,24 @@ export class TorrentClient {
   @Field()
   clientPassword: string;
 
-  @Field(() => TorrentClientApplication)
-  client: TorrentClientApplicationType;
-
   @Field(() => User)
   user: User;
+
+  @Field()
+  reachable: boolean;
+
+  @Field(() => [Torrent])
+  torrents: Torrent[];
+}
+
+@InputType()
+export class AddTorrentClientInput {
+  @Field()
+  clientUrl: string;
+
+  @Field()
+  clientUsername: string;
+
+  @Field()
+  clientPassword: string;
 }

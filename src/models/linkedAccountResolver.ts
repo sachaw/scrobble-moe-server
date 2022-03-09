@@ -2,6 +2,7 @@ import "reflect-metadata";
 
 import axios, { AxiosError } from "axios";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Service } from "typedi";
 
 import { AuthenticationError, NotFoundError } from "@frontendmonster/graphql-utils";
 import pkg, { LinkedAccount as PRISMA_LinkedAccount } from "@prisma/client";
@@ -36,8 +37,11 @@ export interface IAnilistAuthVariables {
   code: string;
 }
 
+@Service()
 @Resolver(LinkedAccount)
 export class LinkedAccountResolver {
+  constructor(private readonly anilistService: Anilist) {}
+
   @Authorized(Role.ADMIN, Role.USER)
   @Query(() => [LinkedAccount])
   async linkedAccounts(
@@ -122,9 +126,13 @@ export class LinkedAccountResolver {
         }
       });
 
+    console.log(this.anilistService);
+
     const anilistTokenResponse = anilistToken.data;
 
-    const accountId = await new Anilist(anilistTokenResponse.access_token).getUserId();
+    this.anilistService.setAccessToken(anilistTokenResponse.access_token);
+
+    const accountId = await this.anilistService.getUserId();
 
     const linkedAccount = await ctx.prisma.linkedAccount.upsert({
       where: {

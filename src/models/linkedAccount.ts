@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType, Provider as ProviderType } from "@prisma/client";
 import pkg from "@prisma/client";
@@ -8,7 +8,12 @@ import pkg from "@prisma/client";
 import { ArrayFilter } from "../utils/types/ArrayFilter.js";
 import { EnumFilter } from "../utils/types/EnumFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
 import { BaseUserFilterWhereInput, User } from "./user.js";
 
@@ -88,16 +93,7 @@ export class ProviderLoginUrlResponse {
 }
 
 @ObjectType()
-export class LinkedAccount {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class LinkedAccount extends BasePrismaModel {
   @Field(() => Provider)
   provider: ProviderType;
 

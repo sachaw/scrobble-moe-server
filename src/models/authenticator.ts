@@ -1,7 +1,7 @@
 import "reflect-metadata";
 
 import { GraphQLByte } from "graphql-scalars";
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType, Transport as TransportType } from "@prisma/client";
 import pkg from "@prisma/client";
@@ -11,7 +11,12 @@ import { BytesFilter } from "../utils/types/BytesFilter.js";
 import { EnumArrayFilter } from "../utils/types/EnumArrayFilter.js";
 import { IntFilter } from "../utils/types/IntFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { BaseUserFilterWhereInput, User } from "./user.js";
 
 const { Prisma, Transport } = pkg;
@@ -75,16 +80,7 @@ export class AuthenticatorFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class Authenticator {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class Authenticator extends BasePrismaModel {
   @Field()
   AAGUID: string;
 

@@ -1,7 +1,6 @@
 //@ts-ignore - tmp workaround for gql-helix broken ESM support
 import { getGraphQLParameters, processRequest } from "graphql-helix";
 import { json } from "milliparsec";
-import { buildSchema } from "type-graphql";
 
 import { envelop, useAsyncSchema } from "@envelop/core";
 import { MetadataService } from "@simplewebauthn/server";
@@ -9,50 +8,25 @@ import { App } from "@tinyhttp/app";
 import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
 
-import { AuthResolver } from "./lib/auth/authResolver.js";
 import { context } from "./lib/context.js";
-import { loadEnv } from "./lib/env.js";
+import { initializeJobs } from "./lib/cron.js";
+import { env, loadEnv } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
-import { WebhookResolver } from "./lib/webhook/webhookResolver.js";
-import { AuthenticatorResolver } from "./models/authenticatorResolver.js";
-import { EncoderResolver } from "./models/encoderResolver.js";
-import { LinkedAccountResolver } from "./models/linkedAccountResolver.js";
-import { ScrobbleResolver } from "./models/scrobbleResolver.js";
-import { SeriesSubscriptionResolver } from "./models/seriesSubscriptionResolver.js";
-import { ServerResolver } from "./models/serverResolver.js";
-import { TokenResolver } from "./models/tokenResolver.js";
-import { TorrentClientResolver } from "./models/torrentClientResolver.js";
-import { UserResolver } from "./models/userResolver.js";
-import { authCheck } from "./utils/auth.js";
+import { userSchema } from "./schema/user.js";
 
 loadEnv();
+
+// const logtail = new Logtail(env.LOGTAIL_TOKEN);
+
 void MetadataService.initialize().then(() => {
   console.log("🔐 MetadataService initialized");
 });
 
+initializeJobs();
+
 const getEnveloped = envelop({
-  plugins: [
-    useAsyncSchema(
-      buildSchema({
-        resolvers: [
-          AuthResolver,
-          AuthenticatorResolver,
-          EncoderResolver,
-          LinkedAccountResolver,
-          ScrobbleResolver,
-          SeriesSubscriptionResolver,
-          ServerResolver,
-          TokenResolver,
-          TorrentClientResolver,
-          UserResolver,
-          WebhookResolver,
-        ],
-        authChecker: authCheck,
-        dateScalarMode: "isoDate",
-        scalarsMap: [],
-      })
-    ),
-  ],
+  // plugins: [useLazyLoadedSchema((context) => (context ? publicSchema : userSchema))],
+  plugins: [useAsyncSchema(userSchema)],
 });
 
 const app = new App();
@@ -106,6 +80,6 @@ app
       res.send({ errors: [{ message: "Not Supported in this demo" }] });
     }
   })
-  .listen(parseInt(process.env.PORT ?? "4000"), () => {
+  .listen(env.PORT, () => {
     console.log(`🚀 Server ready`);
   });

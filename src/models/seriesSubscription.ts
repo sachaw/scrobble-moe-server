@@ -1,14 +1,21 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, Int, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType } from "@prisma/client";
 import pkg from "@prisma/client";
 
 import { ArrayFilter } from "../utils/types/ArrayFilter.js";
+import { IntFilter } from "../utils/types/IntFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
 import { BaseEncoderFilterWhereInput, Encoder } from "./encoder.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
+import { AniListData } from "./scrobble.js";
 import { BaseUserFilterWhereInput, User } from "./user.js";
 
 const { Prisma } = pkg;
@@ -23,6 +30,9 @@ export class BaseSeriesSubscriptionFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   nameExcludes?: StringFilter;
+
+  @Field({ nullable: true })
+  episodeOffset?: IntFilter;
 
   @Field({ nullable: true })
   providerMediaId?: StringFilter;
@@ -55,21 +65,15 @@ export class SeriesSubscriptionFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class SeriesSubscription {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class SeriesSubscription extends BasePrismaModel {
   @Field()
   nameIncludes: string;
 
-  @Field(() => [String])
-  nameExcludes: string[];
+  @Field(() => String, { nullable: true })
+  nameExcludes?: string;
+
+  @Field(() => Int)
+  episodeOffset: number;
 
   @Field()
   providerMediaId: string;
@@ -79,4 +83,25 @@ export class SeriesSubscription {
 
   @Field(() => Encoder)
   encoder: Encoder;
+
+  @Field(() => AniListData, { nullable: true })
+  anilist: AniListData;
+}
+
+@InputType()
+export class AddSeriesSubscriptionInput {
+  @Field()
+  nameIncludes: string;
+
+  @Field({ nullable: true })
+  nameExcludes?: string;
+
+  @Field()
+  episodeOffset: number;
+
+  @Field()
+  providerMediaId: string;
+
+  @Field()
+  encoderId: string;
 }

@@ -18,6 +18,7 @@ model User {
     thumb                            String
     authenticationChallenge          String?
     authenticationChallengeExpiresAt DateTime?
+    torrentSavePath                  String?
     role                             Role      @default(USER)
 
     authenticators      Authenticator[]
@@ -25,8 +26,8 @@ model User {
     tokens              Token[]
     scrobbles           Scrobble[]
     servers             Server[]
-    torrentClients      TorrentClient[]
     seriesSubscriptions SeriesSubscription[]
+    torrentClient       TorrentClient?
 }
 
 model Authenticator {
@@ -140,33 +141,26 @@ enum Provider {
 }
 
 model Encoder {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    name      String   @unique
-    rssURL    String
+    id         String   @id @default(cuid())
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    name       String   @unique
+    rssURL     String
+    matchRegex String
 
     userSubscriptions SeriesSubscription[]
 }
 
 model TorrentClient {
-    id             String                   @id @default(cuid())
-    createdAt      DateTime                 @default(now())
-    updatedAt      DateTime                 @updatedAt
-    clientUrl      String
+    id             String   @id @default(cuid())
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    clientUrl      String   @unique
     clientUsername String
     clientPassword String
-    client         TorrentClientApplication
 
     user   User   @relation(fields: [userId], references: [id])
-    userId String
-}
-
-enum TorrentClientApplication {
-    DELUGE
-    RTORRENT
-    QBITTORRENT
-    UTORRENT
+    userId String @unique
 }
 
 model SeriesSubscription {
@@ -174,7 +168,8 @@ model SeriesSubscription {
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
     nameIncludes    String
-    nameExcludes    String[]
+    nameExcludes    String
+    episodeOffset   Int
     providerMediaId String
 
     user      User    @relation(fields: [userId], references: [id])

@@ -3,6 +3,8 @@ import jsonwebtoken from "jsonwebtoken";
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "@tinyhttp/app";
 
+import { env } from "./env.js";
+
 export interface ContextInput {
   req: Request;
   res: Response;
@@ -30,7 +32,7 @@ export const context = async (ctx: ContextInput): Promise<Context> => {
       const { access_token, refresh_token } = tokens.groups;
 
       try {
-        const decoded = jsonwebtoken.verify(access_token, process.env.JWT_SECRET ?? "");
+        const decoded = jsonwebtoken.verify(access_token, env.JWT_SECRET);
 
         const tmpUser = await ctx.prisma.user.findUnique({
           where: {

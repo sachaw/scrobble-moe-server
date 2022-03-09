@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
+import { Service } from "typedi";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import pkg, { Authenticator as PRISMA_Authenticator } from "@prisma/client";
@@ -10,6 +11,8 @@ import { Authenticator, AuthenticatorFindManyInput } from "./authenticator.js";
 import { restrictUser } from "./helperTypes.js";
 
 const { Role } = pkg;
+
+@Service()
 @Resolver(Authenticator)
 export class AuthenticatorResolver {
   @Authorized(Role.ADMIN, Role.USER)

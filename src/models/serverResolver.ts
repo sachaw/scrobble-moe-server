@@ -2,6 +2,7 @@ import "reflect-metadata";
 
 import cuid from "cuid";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Service } from "typedi";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import pkg, { Server as PRISMA_Server } from "@prisma/client";
@@ -12,6 +13,8 @@ import { restrictUserArray } from "./helperTypes.js";
 import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server.js";
 
 const { Role } = pkg;
+
+@Service()
 @Resolver(Server)
 export class ServerResolver {
   @Authorized(Role.ADMIN, Role.USER)
@@ -60,7 +63,7 @@ export class ServerResolver {
   }
 
   @Authorized(Role.ADMIN, Role.USER)
-  @Mutation(() => Server, { nullable: true })
+  @Mutation(() => Server)
   async linkServer(
     @Arg("linkServerInput") linkServerInput: LinkServerInput,
     @Ctx() ctx: Context

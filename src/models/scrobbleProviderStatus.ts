@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type {
   Provider as ProviderType,
@@ -10,7 +10,7 @@ import pkg from "@prisma/client";
 
 import { ArrayFilter } from "../utils/types/ArrayFilter.js";
 import { EnumFilter } from "../utils/types/EnumFilter.js";
-import { FilterWhereInput } from "./helperTypes.js";
+import { BasePrismaModel, FilterWhereInput } from "./helperTypes.js";
 import { Scrobble } from "./scrobble.js";
 
 const { Provider, ScrobbleStatus } = pkg;
@@ -38,16 +38,7 @@ export class ScrobbleProviderStatusArrayFilter extends ArrayFilter(
 ) {}
 
 @ObjectType()
-export class ScrobbleProviderStatus {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class ScrobbleProviderStatus extends BasePrismaModel {
   @Field(() => ScrobbleStatus)
   status: ScrobbleStatusType;
 

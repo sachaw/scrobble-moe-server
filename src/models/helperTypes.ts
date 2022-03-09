@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Field, InputType, registerEnumType } from "type-graphql";
+import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType, Role } from "@prisma/client";
 import pkg from "@prisma/client";
@@ -14,6 +14,18 @@ const { Prisma } = pkg;
 export enum RequestScope {
   GLOBAL,
   USER,
+}
+
+@ObjectType()
+export class BasePrismaModel {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
 }
 
 @InputType()

@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import { Service } from "typedi";
 
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import pkg, { Scrobble as PRISMA_Scrobble } from "@prisma/client";
@@ -11,6 +12,8 @@ import { restrictUser } from "./helperTypes.js";
 import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble.js";
 
 const { Role } = pkg;
+
+@Service()
 @Resolver(Scrobble)
 export class ScrobbleResolver {
   @FieldResolver()
@@ -85,6 +88,7 @@ export class ScrobbleResolver {
       parseInt(scrobbleFeed.providerMediaId)
     );
     const anilistData = await anilist.getAnimeInfo(ids);
+
     return Promise.all(
       scrobbleFeed.map(async (feedItem) => {
         const { userId, ...entry } = feedItem;
@@ -104,6 +108,7 @@ export class ScrobbleResolver {
           user: {
             username: user.username,
             thumb: user.thumb,
+            torrentSavePath: user.torrentSavePath ?? undefined,
           },
         };
       })

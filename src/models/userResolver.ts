@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
+import { Service } from "typedi";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
 import pkg, { User as PRISMA_User } from "@prisma/client";
@@ -10,6 +11,8 @@ import { RequestScope } from "./helperTypes.js";
 import { User, UserFindManyInput } from "./user.js";
 
 const { Role } = pkg;
+
+@Service()
 @Resolver(User)
 export class UserResolver {
   @Authorized(Role.ADMIN, Role.USER)
@@ -44,7 +47,7 @@ export class UserResolver {
           },
         },
         servers: true,
-        torrentClients: true,
+        torrentClient: true,
         seriesSubscriptions: true,
       },
     });

@@ -1,3 +1,5 @@
+import { Service } from "typedi";
+
 import type { ScrobbleStatus as ScrobbleStatusType } from "@prisma/client";
 import pkg from "@prisma/client";
 
@@ -23,6 +25,7 @@ import { IUserIdResponse, USER_ID } from "./graphql/queries/userId.js";
 
 const { ScrobbleStatus } = pkg;
 
+@Service()
 export class Anilist extends BaseProvider<"graphql"> {
   constructor(accessToken?: string, providerUserId?: string) {
     super("graphql", "https://graphql.anilist.co/", accessToken);
@@ -32,8 +35,13 @@ export class Anilist extends BaseProvider<"graphql"> {
     }
 
     if (accessToken) {
-      this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
+      this.setAccessToken(accessToken);
     }
+  }
+
+  public setAccessToken(accessToken: string): void {
+    this.accessToken = accessToken;
+    this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
   }
 
   async getUserId(): Promise<string> {

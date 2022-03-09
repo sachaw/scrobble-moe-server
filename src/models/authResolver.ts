@@ -1,5 +1,6 @@
 import base64url from "base64url";
 import { Arg, Ctx, Mutation, Query } from "type-graphql";
+import { Service } from "typedi";
 import { decode, encode } from "universal-base64";
 
 import { AuthenticationError } from "@frontendmonster/graphql-utils";
@@ -18,9 +19,10 @@ import {
   RegistrationCredentialJSON,
 } from "@simplewebauthn/typescript-types";
 
-import { generateTokens } from "../../utils/auth.js";
-import { Context } from "../context.js";
-import { env } from "../env.js";
+import { getPlexAccount } from "../lib/auth/utils.js";
+import { Context } from "../lib/context.js";
+import { env } from "../lib/env.js";
+import { generateTokens } from "../utils/auth.js";
 import {
   AuthCheckResponse,
   AuthenticationInput,
@@ -29,8 +31,8 @@ import {
   TokenResponse,
   WebauthnInput,
 } from "./auth.js";
-import { getPlexAccount } from "./utils.js";
 
+@Service()
 export class AuthResolver {
   @Mutation(() => AuthResponse)
   async authenticate(

@@ -1,13 +1,18 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType } from "@prisma/client";
 import pkg from "@prisma/client";
 
 import { ArrayFilter } from "../utils/types/ArrayFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
 import { User, UserArrayFilter } from "./user.js";
 
@@ -63,16 +68,7 @@ export class ServerFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class Server {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class Server extends BasePrismaModel {
   @Field()
   uuid: string;
 

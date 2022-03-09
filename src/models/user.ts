@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Field, ID, InputType, ObjectType, registerEnumType } from "type-graphql";
+import { Field, InputType, ObjectType, registerEnumType } from "type-graphql";
 
 import type { Prisma as PrismaType, Role as RoleType } from "@prisma/client";
 import pkg from "@prisma/client";
@@ -11,13 +11,18 @@ import { EnumFilter } from "../utils/types/EnumFilter.js";
 import { IntFilter } from "../utils/types/IntFilter.js";
 import { StringFilter } from "../utils/types/StringFilter.js";
 import { Authenticator, AuthenticatorArrayFilter } from "./authenticator.js";
-import { FilterWhereInput, FindManyWithScopeInput, WhereUniqueInput } from "./helperTypes.js";
+import {
+  BasePrismaModel,
+  FilterWhereInput,
+  FindManyWithScopeInput,
+  WhereUniqueInput,
+} from "./helperTypes.js";
 import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount.js";
 import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
 import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription.js";
 import { Server, ServerArrayFilter } from "./server.js";
 import { Token, TokenArrayFilter } from "./token.js";
-import { TorrentClient, TorrentClientArrayFilter } from "./torrentClient.js";
+import { BaseTorrentClientFilterWhereInput, TorrentClient } from "./torrentClient.js";
 
 const { Prisma, Role } = pkg;
 registerEnumType(Role, {
@@ -44,6 +49,9 @@ export class BaseUserFilterWhereInput extends FilterWhereInput {
 
   @Field({ nullable: true })
   thumb?: StringFilter;
+
+  @Field({ nullable: true })
+  torrentSavePath?: StringFilter;
 
   @Field({ nullable: true })
   authenticationChallenge?: StringFilter;
@@ -73,7 +81,7 @@ export class UserFilterWhereInput extends BaseUserFilterWhereInput {
   servers?: ServerArrayFilter;
 
   @Field({ nullable: true })
-  torrentClients?: TorrentClientArrayFilter;
+  torrentClient?: BaseTorrentClientFilterWhereInput;
 
   @Field({ nullable: true })
   seriesSubscriptions?: SeriesSubscriptionArrayFilter;
@@ -104,16 +112,7 @@ export class UserFindManyInput extends FindManyWithScopeInput {
 }
 
 @ObjectType()
-export class User {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
+export class User extends BasePrismaModel {
   @Field()
   username: string;
 
@@ -125,6 +124,9 @@ export class User {
 
   @Field()
   thumb: string;
+
+  @Field()
+  torrentSavePath: string;
 
   @Field()
   authenticationChallenge?: string;
@@ -150,8 +152,8 @@ export class User {
   @Field(() => [Server])
   servers: Server[];
 
-  @Field(() => [TorrentClient])
-  torrentClients: TorrentClient[];
+  @Field(() => TorrentClient)
+  torrentClient: TorrentClient;
 
   @Field(() => [SeriesSubscription])
   seriesSubscriptions: SeriesSubscription[];
@@ -164,4 +166,7 @@ export class PublicUser {
 
   @Field()
   thumb: string;
+
+  @Field({ nullable: true })
+  torrentSavePath?: string;
 }
