@@ -3,7 +3,7 @@ import "reflect-metadata";
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 import { Service } from "typedi";
 
-import type { Torrent as TorrentEntry } from "@ctrl/qbittorrent/dist/types";
+import type { Torrent as TorrentEntry } from "@ctrl/qbittorrent";
 import { NotFoundError } from "@frontendmonster/graphql-utils";
 import pkg, { TorrentClient as PRISMA_TorrentClient } from "@prisma/client";
 

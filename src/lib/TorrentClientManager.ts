@@ -1,7 +1,6 @@
 import { Service } from "typedi";
 
-import { QBittorrent } from "@ctrl/qbittorrent";
-import { TorrentFilters } from "@ctrl/qbittorrent/dist/types";
+import { QBittorrent, TorrentFilters } from "@ctrl/qbittorrent";
 import { TorrentSettings } from "@ctrl/shared-torrent";
 
 @Service()
@@ -25,7 +24,10 @@ export class TorrentManager {
   }
 
   public async getManagedTorrents(filter?: TorrentFilters) {
-    return await this.client.listTorrents(undefined, filter, "Airing");
+    return await this.client.listTorrents({
+      filter,
+      category: "Airing",
+    });
   }
 
   public async checkConnectivity() {
