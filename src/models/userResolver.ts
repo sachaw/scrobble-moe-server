@@ -47,8 +47,6 @@ export class UserResolver {
           },
         },
         servers: true,
-        torrentClient: true,
-        seriesSubscriptions: true,
       },
     });
   }

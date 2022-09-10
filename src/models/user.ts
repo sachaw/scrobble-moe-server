@@ -19,10 +19,8 @@ import {
 } from "./helperTypes.js";
 import { LinkedAccount, LinkedAccountArrayFilter } from "./linkedAccount.js";
 import { Scrobble, ScrobbleArrayFilter } from "./scrobble.js";
-import { SeriesSubscription, SeriesSubscriptionArrayFilter } from "./seriesSubscription.js";
 import { Server, ServerArrayFilter } from "./server.js";
 import { Token, TokenArrayFilter } from "./token.js";
-import { BaseTorrentClientFilterWhereInput, TorrentClient } from "./torrentClient.js";
 
 const { Prisma, Role } = pkg;
 registerEnumType(Role, {
@@ -51,9 +49,6 @@ export class BaseUserFilterWhereInput extends FilterWhereInput {
   thumb?: StringFilter;
 
   @Field({ nullable: true })
-  torrentSavePath?: StringFilter;
-
-  @Field({ nullable: true })
   authenticationChallenge?: StringFilter;
 
   @Field({ nullable: true })
@@ -79,12 +74,6 @@ export class UserFilterWhereInput extends BaseUserFilterWhereInput {
 
   @Field({ nullable: true })
   servers?: ServerArrayFilter;
-
-  @Field({ nullable: true })
-  torrentClient?: BaseTorrentClientFilterWhereInput;
-
-  @Field({ nullable: true })
-  seriesSubscriptions?: SeriesSubscriptionArrayFilter;
 }
 
 @InputType()
@@ -126,9 +115,6 @@ export class User extends BasePrismaModel {
   thumb: string;
 
   @Field()
-  torrentSavePath: string;
-
-  @Field()
   authenticationChallenge?: string;
 
   @Field()
@@ -151,12 +137,6 @@ export class User extends BasePrismaModel {
 
   @Field(() => [Server])
   servers: Server[];
-
-  @Field(() => TorrentClient)
-  torrentClient: TorrentClient;
-
-  @Field(() => [SeriesSubscription])
-  seriesSubscriptions: SeriesSubscription[];
 }
 
 @ObjectType()
@@ -166,7 +146,4 @@ export class PublicUser {
 
   @Field()
   thumb: string;
-
-  @Field({ nullable: true })
-  torrentSavePath?: string;
 }

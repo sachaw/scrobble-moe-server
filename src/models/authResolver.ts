@@ -230,7 +230,7 @@ export class AuthResolver {
           throw new AuthenticationError("Authenticator not found");
         }
 
-        const verification = verifyAuthenticationResponse({
+        const verification = await verifyAuthenticationResponse({
           authenticator: {
             counter: authenticator.counter,
             credentialID: authenticator.credentialID,

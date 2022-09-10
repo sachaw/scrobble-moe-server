@@ -108,7 +108,6 @@ export class ScrobbleResolver {
           user: {
             username: user.username,
             thumb: user.thumb,
-            torrentSavePath: user.torrentSavePath ?? undefined,
           },
         };
       })

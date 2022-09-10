@@ -9,7 +9,6 @@ import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
 
 import { context } from "./lib/context.js";
-import { initializeJobs } from "./lib/cron.js";
 import { env, loadEnv } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { userSchema } from "./schema/user.js";
@@ -21,8 +20,6 @@ loadEnv();
 void MetadataService.initialize().then(() => {
   console.log("🔐 MetadataService initialized");
 });
-
-initializeJobs();
 
 const getEnveloped = envelop({
   // plugins: [useLazyLoadedSchema((context) => (context ? publicSchema : userSchema))],

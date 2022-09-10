@@ -18,6 +18,7 @@ import {
   ProviderLoginUrlInput,
   ProviderLoginUrlResponse,
 } from "./linkedAccount.js";
+import got from "got/dist/source/index.js";
 
 const { Role, Provider } = pkg;
 export interface IAnilistAuthResponse {
@@ -94,6 +95,23 @@ export class LinkedAccountResolver {
     if (!ctx.user) {
       throw new NotFoundError("User not found");
     }
+
+    const { data } = await got
+      .post<IAnilistAuthVariables>("https://anilist.co/api/v2/oauth/token", {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        json: {
+          grant_type: "authorization_code",
+          client_id: env.ANILIST_ID,
+          client_secret: env.ANILIST_SECRET,
+          redirect_uri: env.ANILIST_REDIRECT_URL,
+          code: addLinkedAccountInput.code,
+        },
+      })
+      .json<IAnilistAuthResponse>();
+
     const anilistToken = await axios
       .post<IAnilistAuthVariables, IAnilistAuthResponse>(
         "https://anilist.co/api/v2/oauth/token",

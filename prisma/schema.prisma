@@ -18,16 +18,13 @@ model User {
     thumb                            String
     authenticationChallenge          String?
     authenticationChallengeExpiresAt DateTime?
-    torrentSavePath                  String?
     role                             Role      @default(USER)
 
-    authenticators      Authenticator[]
-    accounts            LinkedAccount[]
-    tokens              Token[]
-    scrobbles           Scrobble[]
-    servers             Server[]
-    seriesSubscriptions SeriesSubscription[]
-    torrentClient       TorrentClient?
+    authenticators Authenticator[]
+    accounts       LinkedAccount[]
+    tokens         Token[]
+    scrobbles      Scrobble[]
+    servers        Server[]
 }
 
 model Authenticator {
@@ -138,43 +135,4 @@ model LinkedAccount {
 enum Provider {
     ANILIST
     KITSU
-}
-
-model Encoder {
-    id         String   @id @default(cuid())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
-    name       String   @unique
-    rssURL     String
-    matchRegex String
-
-    userSubscriptions SeriesSubscription[]
-}
-
-model TorrentClient {
-    id             String   @id @default(cuid())
-    createdAt      DateTime @default(now())
-    updatedAt      DateTime @updatedAt
-    clientUrl      String   @unique
-    clientUsername String
-    clientPassword String
-
-    user   User   @relation(fields: [userId], references: [id])
-    userId String @unique
-}
-
-model SeriesSubscription {
-    id              String   @id @default(cuid())
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
-    nameIncludes    String
-    nameExcludes    String
-    episodeOffset   Int
-    providerMediaId String
-
-    user      User    @relation(fields: [userId], references: [id])
-    userId    String
-    encoder   Encoder @relation(fields: [encoderId], references: [id])
-    encoderId String
-
 }

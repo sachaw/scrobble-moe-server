@@ -14,7 +14,6 @@ export const schema = {
   RP_ORIGIN: String,
   PORT: Number,
   LOGTAIL_TOKEN: String,
-  JOB_HEARTBEAT_RSS: String,
 };
 
 export let env: Env;
