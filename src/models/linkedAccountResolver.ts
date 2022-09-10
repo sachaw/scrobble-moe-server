@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import axios, { AxiosError } from "axios";
+import got from "got";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { Service } from "typedi";
 
@@ -18,7 +19,6 @@ import {
   ProviderLoginUrlInput,
   ProviderLoginUrlResponse,
 } from "./linkedAccount.js";
-import got from "got/dist/source/index.js";
 
 const { Role, Provider } = pkg;
 export interface IAnilistAuthResponse {
