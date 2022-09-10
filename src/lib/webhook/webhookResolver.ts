@@ -1,11 +1,13 @@
 import "reflect-metadata";
 
 import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
+import { Service } from "typedi";
 
 import { Context } from "../context.js";
 import { Anilist } from "../providers/anilist.js";
 import { Webhook, WebhookInput } from "./webhook.js";
 
+@Service()
 @Resolver(Webhook)
 export class WebhookResolver {
   @Mutation(() => Webhook)
