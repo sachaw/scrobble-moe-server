@@ -2,7 +2,7 @@
 import { getGraphQLParameters, processRequest } from "graphql-helix";
 import { json } from "milliparsec";
 
-import { envelop, useAsyncSchema } from "@envelop/core";
+import { envelop, useSchema } from "@envelop/core";
 import { MetadataService } from "@simplewebauthn/server";
 import { App } from "@tinyhttp/app";
 import { cookieParser } from "@tinyhttp/cookie-parser";
@@ -14,7 +14,6 @@ import { prisma } from "./lib/prisma.js";
 import { userSchema } from "./schema/user.js";
 
 loadEnv();
-
 // const logtail = new Logtail(env.LOGTAIL_TOKEN);
 
 void MetadataService.initialize().then(() => {
@@ -23,7 +22,7 @@ void MetadataService.initialize().then(() => {
 
 const getEnveloped = envelop({
   // plugins: [useLazyLoadedSchema((context) => (context ? publicSchema : userSchema))],
-  plugins: [useAsyncSchema(userSchema)],
+  plugins: [useSchema(userSchema)],
 });
 
 const app = new App();

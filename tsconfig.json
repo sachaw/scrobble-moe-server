@@ -5,7 +5,7 @@
     "strict": true,
     "pretty": true,
     "lib": ["ESNext"],
-    "target": "ES5",
+    "target": "ESNext",
     "module": "ESNext",
     "esModuleInterop": true,
     "moduleResolution": "Node",
