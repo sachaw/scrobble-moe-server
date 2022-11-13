@@ -104,7 +104,7 @@ export class Anilist extends BaseProvider<"graphql"> {
           bannerImage: media.bannerImage,
           episodes: media.episodes,
         };
-        await redis.set(media.id.toString(), JSON.stringify(aniListEntry));
+        await redis.set(media.id.toString(), JSON.stringify(aniListEntry)); //TODO: set cache expiry
         aniListEntries.push(aniListEntry);
       })
     );

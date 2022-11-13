@@ -13,7 +13,6 @@ export const schema = {
   RP_NAME: String,
   RP_ORIGIN: String,
   PORT: Number,
-  LOGTAIL_TOKEN: String,
 };
 
 export let env: Env;

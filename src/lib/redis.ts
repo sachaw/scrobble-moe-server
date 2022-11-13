@@ -1,13 +1,13 @@
-import Redis from "ioredis";
+import { createClient } from "redis";
 
-import { env, loadEnv } from "./env.js";
-
-// import { logger } from "./logger.js";
+import { loadEnv } from "./env.js";
 
 loadEnv(); // @todo fix needing to load this here.
 
-export const redis = new Redis(env.REDIS_URL);
+export const redis = createClient({
+  url: process.env.REDIS_URL,
+});
 
-// redis.on("error", (error) => {
-//   logger.error(error);
-// });
+redis.on("error", (err) => console.error("Redis Client Error", err));
+
+await redis.connect();
