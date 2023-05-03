@@ -1,7 +1,5 @@
 import got from "got";
 
-import { AuthenticationError } from "@frontendmonster/graphql-utils";
-
 export interface IPlexAccountResponse {
   user: {
     id: number;
@@ -27,7 +25,9 @@ export interface IPlexAccountResponse {
   forumId: string | null;
 }
 
-export const getPlexAccount = async (token: string): Promise<IPlexAccountResponse> => {
+export const getPlexAccount = async (
+  token: string,
+): Promise<IPlexAccountResponse> => {
   return await got
     .get("https://plex.tv/users/account.json", {
       headers: {

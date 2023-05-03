@@ -2,15 +2,11 @@ import "reflect-metadata";
 
 import { Arg, Authorized, Ctx, Query, Resolver } from "type-graphql";
 import { Service } from "typedi";
-
-import { NotFoundError } from "@frontendmonster/graphql-utils";
-import pkg, { Authenticator as PRISMA_Authenticator } from "@prisma/client";
+import { Role, Authenticator as PRISMA_Authenticator } from "@prisma/client";
 
 import { Context } from "../lib/context.js";
 import { Authenticator, AuthenticatorFindManyInput } from "./authenticator.js";
 import { restrictUser } from "./helperTypes.js";
-
-const { Role } = pkg;
 
 @Service()
 @Resolver(Authenticator)
@@ -19,10 +15,11 @@ export class AuthenticatorResolver {
   @Query(() => [Authenticator])
   async authenticators(
     @Arg("authenticatorFindManyInput") authenticatorFindManyInput: AuthenticatorFindManyInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<PRISMA_Authenticator[]> {
     if (!ctx.user) {
-      throw new NotFoundError("User not found");
+      // throw new NotFoundError("User not found");
+      throw new Error("User not found");
     }
     return await ctx.prisma.authenticator.findMany({
       ...restrictUser(authenticatorFindManyInput, ctx.user.role, ctx.user.id),

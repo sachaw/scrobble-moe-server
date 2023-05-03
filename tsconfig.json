@@ -1,19 +1,13 @@
 {
   "compilerOptions": {
-    "sourceMap": true,
     "outDir": "dist",
     "strict": true,
     "pretty": true,
-    "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
-    "esModuleInterop": true,
     "moduleResolution": "Node",
     "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
     "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "skipLibCheck": true
   },

@@ -6,6 +6,7 @@ import { Service } from "typedi";
 import { Context } from "../context.js";
 import { Anilist } from "../providers/anilist.js";
 import { Webhook, WebhookInput } from "./webhook.js";
+import { createId } from "@paralleldrive/cuid2";
 
 @Service()
 @Resolver(Webhook)
@@ -13,7 +14,7 @@ export class WebhookResolver {
   @Mutation(() => Webhook)
   async scrobble(
     @Arg("webhookInput") webhookInput: WebhookInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<Webhook> {
     const server = await ctx.prisma.server.findUnique({
       where: {
@@ -31,7 +32,9 @@ export class WebhookResolver {
       };
     }
 
-    const user = server.users.find((user) => user.username === webhookInput.username);
+    const user = server.users.find(
+      (user) => user.username === webhookInput.username,
+    );
 
     if (!user) {
       return {
@@ -65,10 +68,12 @@ export class WebhookResolver {
             .then(async (status) => {
               void (await ctx.prisma.scrobble.create({
                 data: {
+                  id: createId(),
                   episode: webhookInput.episode,
                   providerMediaId: webhookInput.providerMediaId.toString(),
                   status: {
                     create: {
+                      id: createId(),
                       provider: "ANILIST",
                       status,
                     },

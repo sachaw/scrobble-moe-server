@@ -1,17 +1,27 @@
 import "reflect-metadata";
 
-import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from "type-graphql";
+import {
+  Arg,
+  Authorized,
+  Ctx,
+  FieldResolver,
+  Query,
+  Resolver,
+  Root,
+} from "type-graphql";
 import { Service } from "typedi";
 
-import { NotFoundError } from "@frontendmonster/graphql-utils";
-import pkg, { Scrobble as PRISMA_Scrobble } from "@prisma/client";
+import { Role, Scrobble as PRISMA_Scrobble } from "@prisma/client";
 
 import { Context } from "../lib/context.js";
 import { anilist, Anilist } from "../lib/providers/anilist.js";
 import { restrictUser } from "./helperTypes.js";
-import { AniListData, Scrobble, ScrobbleFeed, ScrobbleFindManyInput } from "./scrobble.js";
-
-const { Role } = pkg;
+import {
+  AniListData,
+  Scrobble,
+  ScrobbleFeed,
+  ScrobbleFindManyInput,
+} from "./scrobble.js";
 
 @Service()
 @Resolver(Scrobble)
@@ -19,10 +29,12 @@ export class ScrobbleResolver {
   @FieldResolver()
   async anilistData(
     @Root() scrobble: Scrobble,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<AniListData | undefined> {
     const anilist2 = new Anilist();
-    const aniListData = await anilist2.getAnimeInfo([parseInt(scrobble.providerMediaId)]);
+    const aniListData = await anilist2.getAnimeInfo([
+      parseInt(scrobble.providerMediaId),
+    ]);
     return aniListData ? aniListData[0] : undefined;
   }
 
@@ -30,10 +42,11 @@ export class ScrobbleResolver {
   @Query(() => [Scrobble])
   async scrobbles(
     @Arg("scrobbleFindManyInput") scrobbleFindManyInput: ScrobbleFindManyInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<PRISMA_Scrobble[]> {
     if (!ctx.user) {
-      throw new NotFoundError("User not found");
+      // throw new NotFoundError("User not found");
+      throw new Error("User not found");
     }
 
     return await ctx.prisma.scrobble.findMany({
@@ -56,11 +69,14 @@ export class ScrobbleResolver {
       },
     });
 
-    const scrobbleFeed: Omit<ScrobbleFeed & { userId: string }, "anilistData" | "user">[] = [];
+    const scrobbleFeed: Omit<
+      ScrobbleFeed & { userId: string },
+      "anilistData" | "user"
+    >[] = [];
 
     const searchScrobbleFeed = (providerMediaId: string): number => {
       return scrobbleFeed.findIndex(
-        (scrobbleFeed) => scrobbleFeed.providerMediaId === providerMediaId
+        (scrobbleFeed) => scrobbleFeed.providerMediaId === providerMediaId,
       );
     };
 
@@ -85,7 +101,7 @@ export class ScrobbleResolver {
     });
 
     const ids: number[] = scrobbleFeed.map((scrobbleFeed) =>
-      parseInt(scrobbleFeed.providerMediaId)
+      parseInt(scrobbleFeed.providerMediaId),
     );
     const anilistData = await anilist.getAnimeInfo(ids);
 
@@ -99,18 +115,21 @@ export class ScrobbleResolver {
         });
 
         if (!user) {
-          throw new NotFoundError("User not found");
+          // throw new NotFoundError("User not found");
+          throw new Error("User not found");
         }
 
         return {
           ...entry,
-          anilistData: anilistData.find((entry) => entry.id === parseInt(feedItem.providerMediaId)),
+          anilistData: anilistData.find(
+            (entry) => entry.id === parseInt(feedItem.providerMediaId),
+          ),
           user: {
             username: user.username,
             thumb: user.thumb,
           },
         };
-      })
+      }),
     );
   }
 }

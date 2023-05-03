@@ -1,18 +1,20 @@
 import "reflect-metadata";
 
-import cuid from "cuid";
+import { createId } from "@paralleldrive/cuid2";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { Service } from "typedi";
 
-import { NotFoundError } from "@frontendmonster/graphql-utils";
-import pkg, { Server as PRISMA_Server } from "@prisma/client";
+import { Role, Server as PRISMA_Server } from "@prisma/client";
 
 import { Context } from "../lib/context.js";
 import { getPlexServers } from "../utils/plex.js";
 import { restrictUserArray } from "./helperTypes.js";
-import { LinkServerInput, Server, ServerFindManyInput, ServerResult } from "./server.js";
-
-const { Role } = pkg;
+import {
+  LinkServerInput,
+  Server,
+  ServerFindManyInput,
+  ServerResult,
+} from "./server.js";
 
 @Service()
 @Resolver(Server)
@@ -21,10 +23,11 @@ export class ServerResolver {
   @Query(() => [Server])
   async servers(
     @Arg("serverFindManyInput") serverFindManyInput: ServerFindManyInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<PRISMA_Server[]> {
     if (!ctx.user) {
-      throw new NotFoundError("User not found");
+      // throw new NotFoundError("User not found");
+      throw new Error("User not found");
     }
 
     return await ctx.prisma.server.findMany({
@@ -40,7 +43,8 @@ export class ServerResolver {
   @Query(() => [ServerResult], { nullable: true })
   async getPlexAccountServers(@Ctx() ctx: Context): Promise<ServerResult[]> {
     if (!ctx.user) {
-      throw new NotFoundError("User not found");
+      // throw new NotFoundError("User not found");
+      throw new Error("User not found");
     }
     const servers = await getPlexServers(ctx.user.plexAuthToken ?? "");
 
@@ -66,15 +70,18 @@ export class ServerResolver {
   @Mutation(() => Server)
   async linkServer(
     @Arg("linkServerInput") linkServerInput: LinkServerInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<PRISMA_Server> {
     if (!ctx.user) {
-      throw new NotFoundError("User not found");
+      // throw new NotFoundError("User not found");
+      throw new Error("User not found");
     }
     const servers = await getPlexServers(ctx.user.plexAuthToken ?? "");
 
     const serverToLink = servers.find(
-      (server) => server._attributes.machineIdentifier === linkServerInput.machineIdentifier
+      (server) =>
+        server._attributes.machineIdentifier ===
+        linkServerInput.machineIdentifier,
     );
 
     if (serverToLink) {
@@ -92,7 +99,8 @@ export class ServerResolver {
         },
 
         create: {
-          secret: cuid(),
+          id: createId(),
+          secret: createId(),
           uuid: serverToLink._attributes.machineIdentifier,
           name: serverToLink._attributes.name,
           users: {
@@ -104,6 +112,7 @@ export class ServerResolver {
       });
     }
 
-    throw new NotFoundError("machineIdentifier");
+    // throw new NotFoundError("machineIdentifier");
+    throw new Error("machineIdentifier");
   }
 }

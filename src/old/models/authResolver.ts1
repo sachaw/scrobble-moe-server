@@ -2,8 +2,6 @@ import base64url from "base64url";
 import { Arg, Ctx, Mutation, Query } from "type-graphql";
 import { Service } from "typedi";
 import { decode, encode } from "universal-base64";
-
-import { AuthenticationError } from "@frontendmonster/graphql-utils";
 import { Transport as TransportType } from "@prisma/client";
 import {
   generateAuthenticationOptions,
@@ -22,7 +20,7 @@ import {
 import { getPlexAccount } from "../lib/auth/utils.js";
 import { Context } from "../lib/context.js";
 import { env } from "../lib/env.js";
-import { generateTokens } from "../utils/auth.js";
+import { generateTokens } from "../../old/auth.js";
 import {
   AuthCheckResponse,
   AuthenticationInput,
@@ -31,6 +29,7 @@ import {
   TokenResponse,
   WebauthnInput,
 } from "./auth.js";
+import { createId } from "@paralleldrive/cuid2";
 
 @Service()
 export class AuthResolver {
@@ -38,7 +37,7 @@ export class AuthResolver {
   async authenticate(
     @Ctx() ctx: Context,
     @Arg("authenticationInput")
-    authenticationInput: AuthenticationInput
+    authenticationInput: AuthenticationInput,
   ): Promise<AuthResponse> {
     const plexAccountData = await getPlexAccount(authenticationInput.plexToken);
 
@@ -56,6 +55,7 @@ export class AuthResolver {
         username: plexAccountData.user.username,
       },
       create: {
+        id: createId(),
         email: plexAccountData.user.email,
         plexAuthToken: authenticationInput.plexToken,
         plexId: plexAccountData.user.id,
@@ -114,7 +114,7 @@ export class AuthResolver {
           return {
             id: authenticator.credentialID,
             transports: authenticator.transports.map(
-              (transport) => transport.toLowerCase() as AuthenticatorTransport
+              (transport) => transport.toLowerCase() as AuthenticatorTransport,
             ),
             type: "public-key",
           };
@@ -150,7 +150,7 @@ export class AuthResolver {
   async webauthn(
     @Arg("WebauthnInput")
     webauthnInput: WebauthnInput,
-    @Ctx() ctx: Context
+    @Ctx() ctx: Context,
   ): Promise<TokenResponse> {
     const plexAccountData = await getPlexAccount(webauthnInput.plexToken);
 
@@ -161,17 +161,19 @@ export class AuthResolver {
     });
 
     if (!user) {
-      throw new AuthenticationError("User not found");
+      // throw new AuthenticationError("User not found");
+      throw new Error("User not found");
     }
 
     if (!user.authenticationChallenge) {
-      throw new AuthenticationError("Challenge has not been generated yet.");
+      // throw new AuthenticationError("Challenge has not been generated yet.");
+      throw new Error("Challenge has not been generated yet.");
     }
 
     switch (webauthnInput.type) {
       case AuthenticationType.REGISTRATION: {
         const authenticatorData = JSON.parse(
-          decode(webauthnInput.verification)
+          decode(webauthnInput.verification),
         ) as RegistrationCredentialJSON;
         const verification = await verifyRegistrationResponse({
           credential: authenticatorData,
@@ -181,18 +183,22 @@ export class AuthResolver {
         });
 
         if (!verification.verified) {
-          throw new AuthenticationError("Challenge Failed");
+          // throw new AuthenticationError("Challenge Failed");
+          throw new Error("Challenge Failed");
         }
 
         if (!verification.registrationInfo) {
-          throw new AuthenticationError("Registration data malformed");
+          // throw new AuthenticationError("Registration data malformed");
+          throw new Error("Registration data malformed");
         }
 
         await ctx.prisma.authenticator.create({
           data: {
+            id: createId(),
             AAGUID: verification.registrationInfo.aaguid,
             credentialID: verification.registrationInfo.credentialID,
-            credentialPublicKey: verification.registrationInfo.credentialPublicKey,
+            credentialPublicKey:
+              verification.registrationInfo.credentialPublicKey,
             counter: verification.registrationInfo.counter,
             revoked: false,
             transports:
@@ -218,7 +224,7 @@ export class AuthResolver {
 
       case AuthenticationType.AUTHENTICATION: {
         const authenticatorData = JSON.parse(
-          decode(webauthnInput.verification)
+          decode(webauthnInput.verification),
         ) as AuthenticationCredentialJSON;
         const authenticator = await ctx.prisma.authenticator.findUnique({
           where: {
@@ -236,7 +242,7 @@ export class AuthResolver {
             credentialID: authenticator.credentialID,
             credentialPublicKey: authenticator.credentialPublicKey,
             transports: authenticator.transports.map(
-              (transport) => transport.toLowerCase() as AuthenticatorTransport
+              (transport) => transport.toLowerCase() as AuthenticatorTransport,
             ),
           },
           credential: authenticatorData,

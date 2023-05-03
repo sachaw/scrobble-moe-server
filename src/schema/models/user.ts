@@ -1,8 +1,9 @@
 import { Role } from "@prisma/client";
 
 import { builder } from "../../builder.js";
+import { prisma } from "../../lib/prisma.js";
 
-export const userModel = () =>
+export const userModel = () => {
   builder.prismaObject("User", {
     fields: (t) => ({
       id: t.exposeID("id"),
@@ -24,3 +25,21 @@ export const userModel = () =>
       servers: t.relation("servers"),
     }),
   });
+
+  builder.queryType({
+    fields: (t) => ({
+      user: t.prismaField({
+        type: "User",
+        nullable: true,
+        args: {
+          id: t.arg.id({ required: true }),
+        },
+        resolve: (query, root, args) =>
+          prisma.user.findUnique({
+            ...query,
+            where: { id: String(args.id) },
+          }),
+      }),
+    }),
+  });
+};

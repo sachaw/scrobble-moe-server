@@ -1,7 +1,13 @@
-import { Provider, Role, ScrobbleStatus, TokenType, Transport } from "@prisma/client";
+import {
+  Provider,
+  Role,
+  ScrobbleStatus,
+  TokenType,
+  Transport,
+  WebauthnAction,
+} from "@prisma/client";
 
 import { builder } from "../builder.js";
-import { AuthenticationType } from "./models/auth.js";
 
 export const registerEnums = () => {
   builder.enumType(Provider, {
@@ -20,7 +26,7 @@ export const registerEnums = () => {
   builder.enumType(Role, {
     name: "Role",
   });
-  builder.enumType(AuthenticationType, {
-    name: "AuthenticationType",
+  builder.enumType(WebauthnAction, {
+    name: "WebauthnAction",
   });
 };

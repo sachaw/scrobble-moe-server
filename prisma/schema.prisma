@@ -12,18 +12,24 @@ generator pothos {
     output   = "../src/generated/pothos-types.ts"
 }
 
+enum WebauthnAction {
+    AUTHENTICATION
+    REGISTRATION
+}
+
 model User {
-    id                               String    @id @default(cuid())
-    createdAt                        DateTime  @default(now())
-    updatedAt                        DateTime  @updatedAt
-    username                         String
-    email                            String    @unique
-    plexId                           Int       @unique
-    plexAuthToken                    String
-    thumb                            String
-    authenticationChallenge          String?
-    authenticationChallengeExpiresAt DateTime?
-    role                             Role      @default(USER)
+    id                 String          @id
+    createdAt          DateTime        @default(now())
+    updatedAt          DateTime        @updatedAt
+    username           String
+    email              String          @unique
+    plexId             Int             @unique
+    plexAuthToken      String
+    thumb              String
+    challangeUsage     WebauthnAction?
+    challenge          String?
+    challengeExpiresAt DateTime?
+    role               Role            @default(USER)
 
     authenticators Authenticator[]
     accounts       LinkedAccount[]
@@ -33,7 +39,7 @@ model User {
 }
 
 model Authenticator {
-    id                  String      @id @default(cuid())
+    id                  String      @id
     createdAt           DateTime    @default(now())
     updatedAt           DateTime    @updatedAt
     AAGUID              String
@@ -60,7 +66,7 @@ enum Role {
 }
 
 model Token {
-    id          String    @id @default(cuid())
+    id          String    @id
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
     hashedToken String
@@ -79,7 +85,7 @@ enum TokenType {
 }
 
 model Server {
-    id        String   @id @default(cuid())
+    id        String   @id
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     uuid      String   @unique
@@ -91,7 +97,7 @@ model Server {
 }
 
 model Scrobble {
-    id              String   @id @default(cuid())
+    id              String   @id
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
     providerMediaId String
@@ -106,7 +112,7 @@ model Scrobble {
 }
 
 model ScrobbleProviderStatus {
-    id        String         @id @default(cuid())
+    id        String         @id
     createdAt DateTime       @default(now())
     updatedAt DateTime       @updatedAt
     status    ScrobbleStatus
@@ -123,7 +129,7 @@ enum ScrobbleStatus {
 }
 
 model LinkedAccount {
-    id                 String    @id @default(cuid())
+    id                 String    @id
     createdAt          DateTime  @default(now())
     updatedAt          DateTime  @updatedAt
     provider           Provider
