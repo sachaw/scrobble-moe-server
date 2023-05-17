@@ -7,29 +7,18 @@ generator client {
     provider = "prisma-client-js"
 }
 
-generator pothos {
-    provider = "prisma-pothos-types"
-    output   = "../src/generated/pothos-types.ts"
-}
-
-enum WebauthnAction {
-    AUTHENTICATION
-    REGISTRATION
-}
-
 model User {
-    id                 String          @id
-    createdAt          DateTime        @default(now())
-    updatedAt          DateTime        @updatedAt
+    id                 String    @id
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
     username           String
-    email              String          @unique
-    plexId             Int             @unique
+    email              String    @unique
+    plexId             Int       @unique
     plexAuthToken      String
     thumb              String
-    challangeUsage     WebauthnAction?
     challenge          String?
     challengeExpiresAt DateTime?
-    role               Role            @default(USER)
+    role               Role      @default(USER)
 
     authenticators Authenticator[]
     accounts       LinkedAccount[]

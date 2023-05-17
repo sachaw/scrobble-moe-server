@@ -1,17 +1,15 @@
-import { createYoga } from "graphql-yoga";
-import { json } from "milliparsec";
-
 import { MetadataService } from "@simplewebauthn/server";
+import { expressConnectMiddleware } from "@bufbuild/connect-express";
+
+import { routes } from "./connect.js";
+
 import { App } from "@tinyhttp/app";
-import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
+import { logger } from "@tinyhttp/logger";
+import { jwt } from "@tinyhttp/jwt";
+import { client, secrets } from "./lib/infisical.js";
 
-import { env, loadEnv } from "./lib/env.js";
-import { schema } from "./schema.js";
-import { createId } from "@paralleldrive/cuid2";
-import { prisma } from "./lib/prisma.js";
-
-loadEnv();
+const app = new App();
 
 await MetadataService.initialize({
   verificationMode: "permissive",
@@ -19,29 +17,35 @@ await MetadataService.initialize({
   console.log("🔐 MetadataService initialized");
 });
 
-const app = new App();
-const yoga = createYoga({
-  schema,
-  context: (req) => {
-    return {
-      prisma,
-    };
-  },
-});
-
 app
-  .use(cookieParser())
-  .use(json())
+  .use(logger())
+  .use(
+    jwt({
+      secret: [secrets.JWT_PUBLIC_KEY, secrets.JWT_PRIVATE_KEY],
+    }),
+  )
   .use(
     cors({
       credentials: true,
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Custom-Header",
+        "Connect-Protocol-Version",
+      ],
       origin:
         process.env.NODE_ENV === "production"
           ? "https://scrobble.moe"
           : "http://localhost:3000",
     }),
   )
-  .use("/", yoga)
-  .listen(env.PORT, () => {
-    console.log("🚀 Server ready");
+  .use(
+    // @ts-ignore
+    expressConnectMiddleware({
+      routes,
+      connect: true,
+    }),
+  )
+  .listen(secrets.PORT, async () => {
+    console.log(`🚀 Server listening on port ${secrets.PORT}`);
   });

@@ -5,11 +5,14 @@
     "pretty": true,
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "removeComments": true,
     "strictPropertyInitialization": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@protobufs/*": ["./src/generated/moe/scrobble/*"]
+    }
   },
   "include": ["src/**/*"]
 }
