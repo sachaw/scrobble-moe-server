@@ -1,4 +1,7 @@
 {
   "editor.defaultFormatter": "rome.rome",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }

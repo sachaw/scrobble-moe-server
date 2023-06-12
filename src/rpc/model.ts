@@ -1,14 +1,8 @@
-import {
-  Code,
-  ConnectError,
-  HandlerContext,
-  ServiceImpl,
-} from "@bufbuild/connect";
 import { prisma } from "../lib/prisma.js";
-import { Provider } from "@prisma/client";
 import { Anilist } from "../providers/anilist.js";
-import { createId } from "@paralleldrive/cuid2";
-import { ModelService } from "@protobufs/model/v1/model_service_connect.js";
+import { UserManager } from "../utils/userManager.js";
+import { BaseService } from "./BaseService.js";
+import { ModelService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/model/v1/model_service_connect.js";
 import {
   AddServerRequest,
   AddServerResponse,
@@ -20,88 +14,71 @@ import {
   GetUserResponse,
   GetUsersRequest,
   GetUsersResponse,
-} from "@protobufs/model/v1/model_pb.js";
-import { getPlexServers } from "../utils/plex.js";
+} from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/model/v1/model_pb.js";
+import {
+  Code,
+  ConnectError,
+  HandlerContext,
+  ServiceImpl,
+} from "@bufbuild/connect";
+import { createId } from "@paralleldrive/cuid2";
+import { Provider, Role, Transport } from "@prisma/client";
 
-// function Auth(userGroup: string): ClassDecorator {
-//   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-//     const originalMethod = descriptor.value;
+export class Model
+  extends BaseService<string>
+  implements ServiceImpl<typeof ModelService>
+{
+  constructor(protected userManager: UserManager) {
+    super(userManager);
+  }
 
-//     descriptor.value = async function (...args: any[]) {
-//       const [req, ctx] = args;
-//       const userGroupFromContext = ctx.group; // Assuming the group information is located in ctx.group
-
-//       // Check if the user group matches the allowed group
-//       if (userGroupFromContext === userGroup) {
-//         // Call the original method if the user is authorized
-//         return await originalMethod.apply(this, args);
-//       } else {
-//         throw new Error('Unauthorized access');
-//       }
-//     };
-
-//     return descriptor;
-//   };
-// }
-
-export function Auth(group: boolean) {
-  return (
-    _target: Object,
-    _key: string | symbol,
-    descriptor: PropertyDescriptor,
-  ) => {
-    // const original = descriptor.value;
-
-    // // eslint-disable-next-line
-    // descriptor.value = function (...args: any[]) {
-    //   const context = args.find((arg) => arg instanceof ServiceContext);
-
-    //   checkContext(context);
-
-    //   const accessToken = (context as ServiceContext).request.cookies[tokenName];
-
-    //   if (!accessToken) {
-    //     throw new Errors.UnauthorizedError(
-    //       `No '${tokenName}' access token provided.`
-    //     );
-    //   }
-
-    //   checkSecret();
-
-    //   try {
-    //     jwt.verify(accessToken, process.env.JWT_SECRET as string);
-    //   } catch (error) {
-    //     throw new Errors.ForbiddenError(
-    //       'Invalid or expired JWT provided.'
-    //     );
-    //   }
-
-    //   return original.apply(this, args);
-    // };
-    console.log("test");
-    return _target;
-  };
-}
-
-export class Model implements ServiceImpl<typeof ModelService> {
   public async getUser(req: GetUserRequest): Promise<GetUserRequest> {
     return new GetUserResponse();
   }
   public async getUsers(req: GetUsersRequest): Promise<GetUsersResponse> {
     return new GetUsersResponse();
   }
-  public async getServer(req: GetServerRequest): Promise<GetServerResponse> {
+
+  public async getServer(
+    req: GetServerRequest,
+    ctx: HandlerContext,
+  ): Promise<GetServerResponse> {
+    this.authorization(ctx);
+
     return new GetServerResponse();
   }
-  public async getServers(req: GetServersRequest): Promise<GetServersResponse> {
-    return new GetServersResponse();
+
+  public async getServers(
+    req: GetServersRequest,
+    ctx: HandlerContext,
+  ): Promise<GetServersResponse> {
+    this.authorization(ctx);
+
+    const servers = await prisma.server.findMany({
+      where: {
+        users: {
+          every: {
+            id: this.userManager.user.id,
+          },
+        },
+      },
+    });
+    return new GetServersResponse({
+      servers: servers.map((server) => {
+        return {
+          id: server.id,
+          secret: server.secret,
+          uuid: server.uuid,
+        };
+      }),
+    });
   }
-  @Auth(true)
+
   public async addServer(
     req: AddServerRequest,
     ctx: HandlerContext,
   ): Promise<AddServerResponse> {
-    //loged in user
+    this.authorization(ctx);
 
     // const servers = await getPlexServers(ctx.user.plexAuthToken ?? "");
 

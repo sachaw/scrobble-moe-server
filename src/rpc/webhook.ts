@@ -1,9 +1,9 @@
 import { Code, ConnectError, ServiceImpl } from "@bufbuild/connect";
-import { WebhookService } from "@protobufs/webhook/v1/webhook_service_connect.js";
+import { WebhookService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/webhook/v1/webhook_service_connect.js";
 import {
   ScrobbleRequest,
   ScrobbleResponse,
-} from "@protobufs/webhook/v1/webhook_pb.js";
+} from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/webhook/v1/webhook_pb.js";
 import { prisma } from "../lib/prisma.js";
 import { Provider } from "@prisma/client";
 import { Anilist } from "../providers/anilist.js";

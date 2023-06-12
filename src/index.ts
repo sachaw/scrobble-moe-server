@@ -1,13 +1,13 @@
-import { MetadataService } from "@simplewebauthn/server";
-import { expressConnectMiddleware } from "@bufbuild/connect-express";
-
 import { routes } from "./connect.js";
-
-import { App } from "@tinyhttp/app";
+import { UserManager } from "./utils/userManager.js";
+import { expressConnectMiddleware } from "@bufbuild/connect-express";
+import { MetadataService } from "@simplewebauthn/server";
+import { App, Response } from "@tinyhttp/app";
+import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
 import { logger } from "@tinyhttp/logger";
-import { jwt } from "@tinyhttp/jwt";
-import { client, secrets } from "./lib/infisical.js";
+
+// export NODE_OPTIONS="--no-network-family-autoselection"
 
 const app = new App();
 
@@ -19,11 +19,7 @@ await MetadataService.initialize({
 
 app
   .use(logger())
-  .use(
-    jwt({
-      secret: [secrets.JWT_PUBLIC_KEY, secrets.JWT_PRIVATE_KEY],
-    }),
-  )
+  .use(cookieParser())
   .use(
     cors({
       credentials: true,
@@ -39,13 +35,25 @@ app
           : "http://localhost:3000",
     }),
   )
-  .use(
-    // @ts-ignore
-    expressConnectMiddleware({
-      routes,
+  .use(async (req, res: Response, next) => {
+    const userManager = new UserManager(
+      process.env.PASETO_SECRET_KEY,
+      process.env.PASETO_PUBLIC_KEY,
+    );
+    const token = req.cookies?.Token;
+
+    if (token) {
+      userManager.setToken(token);
+    }
+
+    return expressConnectMiddleware({
+      routes: (router) => {
+        return routes(router, userManager);
+      },
       connect: true,
-    }),
-  )
-  .listen(secrets.PORT, async () => {
-    console.log(`🚀 Server listening on port ${secrets.PORT}`);
+      // @ts-ignore
+    })(req, res, next);
+  })
+  .listen(parseInt(process.env.PORT), async () => {
+    console.log(`🚀 Server listening on port ${process.env.PORT}`);
   });

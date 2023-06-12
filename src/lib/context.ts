@@ -1,8 +1,5 @@
-import { verify } from "jsonwebtoken";
-
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "@tinyhttp/app";
-import { client, secrets } from "../lib/infisical.js";
 
 export interface ContextInput {
   req: Request;
@@ -29,7 +26,11 @@ export const context = async (ctx: ContextInput): Promise<Context> => {
       const { access_token, refresh_token } = tokens.groups;
 
       try {
-        const decoded = verify(access_token, secrets.JWT_PUBLIC_KEY);
+        // const decoded = verify(access_token, secrets.JWT_PUBLIC_KEY);
+
+        const decoded = {
+          sub: "test",
+        };
 
         const tmpUser = await ctx.prisma.user.findUnique({
           where: {

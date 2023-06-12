@@ -4,26 +4,59 @@ import { ScrobbleStatus } from "@prisma/client";
 import { redis } from "../lib/redis.js";
 import { BaseProvider, ILibraryEntry } from "./base.js";
 import {
-  SaveMediaListVariables,
   SAVE_MEDIA_LIST,
+  SaveMediaListVariables,
 } from "./graphql/mutations/SaveMediaListEntry.js";
 import {
+  MEDIA,
   MediaResponse,
   MediaVariables,
-  MEDIA,
 } from "./graphql/queries/media.js";
 import {
+  MEDIA_EPISODES,
   MediaEpisodesResponse,
   MediaEpisodesVariables,
-  MEDIA_EPISODES,
 } from "./graphql/queries/mediaEpisodes.js";
 import {
+  MEDIA_LIST,
   MediaListResponse,
   MediaListVariables,
-  MEDIA_LIST,
 } from "./graphql/queries/mediaList.js";
-import { UserIdResponse, USER_ID } from "./graphql/queries/userId.js";
-import { AniListData } from "../../model/scrobble.js";
+import { USER_ID, UserIdResponse } from "./graphql/queries/userId.js";
+
+// export class Scrobble {
+//   providerMediaId: string;
+//   episode: number;
+//   user: User;
+//   server: Server;
+//   accounts: LinkedAccount[];
+//   status: ScrobbleProviderStatus[];
+//   anilistData?: AniListData;
+// }
+
+export class AniListData {
+  id: number;
+  title: string;
+  type: "ANIME" | "MANGA";
+  status:
+    | "FINISHED"
+    | "RELEASING"
+    | "NOT_YET_RELEASED"
+    | "CANCELLED"
+    | "HIATUS";
+  description: string;
+  coverImage: string;
+  bannerImage?: string;
+  episodes: number;
+}
+
+export class ScrobbleFeed {
+  providerMediaId: string;
+  // user: PublicUser;
+  anilistData?: AniListData;
+  startEpisode: number;
+  endEpisode: number;
+}
 
 export class Anilist extends BaseProvider<"graphql"> {
   constructor(accessToken?: string, providerUserId?: string) {

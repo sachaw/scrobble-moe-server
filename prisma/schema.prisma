@@ -8,21 +8,18 @@ generator client {
 }
 
 model User {
-    id                 String    @id
-    createdAt          DateTime  @default(now())
-    updatedAt          DateTime  @updatedAt
-    username           String
-    email              String    @unique
-    plexId             Int       @unique
-    plexAuthToken      String
-    thumb              String
-    challenge          String?
-    challengeExpiresAt DateTime?
-    role               Role      @default(USER)
+    id            String   @id
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    username      String
+    email         String   @unique
+    plexId        Int      @unique
+    plexAuthToken String
+    thumb         String
+    role          Role     @default(USER)
 
     authenticators Authenticator[]
     accounts       LinkedAccount[]
-    tokens         Token[]
     scrobbles      Scrobble[]
     servers        Server[]
 }
@@ -31,6 +28,7 @@ model Authenticator {
     id                  String      @id
     createdAt           DateTime    @default(now())
     updatedAt           DateTime    @updatedAt
+    friendlyName        String
     AAGUID              String
     credentialID        Bytes       @unique
     credentialPublicKey Bytes
@@ -47,30 +45,12 @@ enum Transport {
     BLE
     NFC
     INTERNAL
+    HYBRID
 }
 
 enum Role {
     USER
     ADMIN
-}
-
-model Token {
-    id          String    @id
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    hashedToken String
-    expiresAt   DateTime
-    type        TokenType
-
-    user   User   @relation(fields: [userId], references: [id])
-    userId String
-
-    @@unique([hashedToken])
-}
-
-enum TokenType {
-    ACCESS
-    REFRESH
 }
 
 model Server {

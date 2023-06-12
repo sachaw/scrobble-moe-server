@@ -1,15 +1,37 @@
-import { Code, ConnectError, ServiceImpl } from "@bufbuild/connect";
-import { AuthService } from "@protobufs/auth/v1/auth_connect.js";
+import { prisma } from "../lib/prisma.js";
+import { redis } from "../lib/redis.js";
+import { getPlexAccount } from "../utils/plex.js";
+import { UserManager } from "../utils/userManager.js";
+import { BaseService } from "./BaseService.js";
+import { AuthService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/auth/v1/auth_service_connect.js";
 import {
+  AddAuthenticatorRequest,
+  AddAuthenticatorResponse,
+  GetAuthenticatorRegistrationOptionsRequest,
+  GetAuthenticatorRegistrationOptionsResponse,
+  GetAuthenticatorRequest,
+  GetAuthenticatorResponse,
+  GetAuthenticatorsRequest,
+  GetAuthenticatorsResponse,
+  GetTokensRequest,
+  GetTokensResponse,
   PlexAuthRequest,
   PlexAuthResponse,
+  RevokeAuthenticatorRequest,
+  RevokeAuthenticatorResponse,
+  RevokeTokenRequest,
+  RevokeTokenResponse,
   WebAuthnRequest,
   WebAuthnResponse,
-} from "@protobufs/auth/v1/auth_pb.js";
-import { prisma } from "../lib/prisma.js";
-import got from "got";
+} from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/auth/v1/auth_pb.js";
+import {
+  Code,
+  ConnectError,
+  HandlerContext,
+  ServiceImpl,
+} from "@bufbuild/connect";
 import { createId } from "@paralleldrive/cuid2";
-import { decode, encode } from "universal-base64";
+import { Transport } from "@prisma/client";
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -23,55 +45,22 @@ import {
   RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
 import base64url from "base64url";
-import { Transport } from "@prisma/client";
-import { ScrobbleFeedEventStream } from "../utils/events.js";
-import { secrets } from "../lib/infisical.js";
-interface PlexAccountResponse {
-  user: {
-    id: number;
-    uuid: string;
-    email: string;
-    joined_at: string;
-    username: string;
-    title: string;
-    thumb: string;
-    hasPassword: boolean;
-    authToken: string;
-    authentication_token: string;
-    subscription: {
-      active: boolean;
-      status: string;
-      plan: string;
-      features: string[];
-    };
-    roles: { roles: string[] };
-  };
-  entitlements: string[];
-  confirmedAt: string;
-  forumId: string | null;
-}
+import { CookieBuilder, SameSite } from "patissier";
+import { decode, encode } from "universal-base64";
 
-export class Auth implements ServiceImpl<typeof AuthService> {
-  private dispatcher = ScrobbleFeedEventStream;
-
-  private async getPlexAccount(token: string) {
-    console.log("fetching plex user data");
-    this.dispatcher.dispatch(token);
-    return await got
-      .get("https://plex.tv/users/account.json", {
-        headers: {
-          "X-Plex-Token": token,
-          Accept: "application/json",
-        },
-      })
-      .json<PlexAccountResponse>()
-      .catch((err: Error) => {
-        throw new ConnectError(err.message, Code.Internal);
-      });
+export class Auth
+  extends BaseService<string>
+  implements ServiceImpl<typeof AuthService>
+{
+  constructor(protected userManager: UserManager) {
+    super(userManager);
   }
 
+  private tokenExpiration = 60 * 60 * 24 * 7; // 7 days
+  private challengeExpiration = 60 * 5; // 5 minutes
+
   public async plexAuth(req: PlexAuthRequest): Promise<PlexAuthResponse> {
-    const plexAccountData = await this.getPlexAccount(req.plexToken);
+    const plexAccountData = await getPlexAccount(req.plexToken);
 
     const user = await prisma.user
       .upsert({
@@ -108,8 +97,8 @@ export class Auth implements ServiceImpl<typeof AuthService> {
 
     if (isRegistering) {
       webauthnOptions = generateRegistrationOptions({
-        rpID: secrets.RP_ID,
-        rpName: secrets.RP_NAME,
+        rpID: process.env.RP_ID,
+        rpName: process.env.RP_NAME,
         userID: user.id,
         userName: user.username,
         attestationType: "direct",
@@ -119,7 +108,7 @@ export class Auth implements ServiceImpl<typeof AuthService> {
       });
     } else {
       webauthnOptions = generateAuthenticationOptions({
-        rpID: secrets.RP_ID,
+        rpID: process.env.RP_ID,
         userVerification: "required",
         allowCredentials: user.authenticators
           .filter((a) => !a.revoked)
@@ -135,19 +124,9 @@ export class Auth implements ServiceImpl<typeof AuthService> {
           }),
       });
     }
-    await prisma.user
-      .update({
-        data: {
-          challenge: webauthnOptions.challenge,
-          challengeExpiresAt: new Date(new Date().getTime() + 1000 * 60 * 1),
-        },
-        where: {
-          id: user.id,
-        },
-      })
-      .catch((err: Error) => {
-        throw new ConnectError(err.message, Code.Internal);
-      });
+    await redis.set(`challenge:${user.id}`, webauthnOptions.challenge, {
+      EX: this.challengeExpiration,
+    });
 
     return new PlexAuthResponse({
       username: plexAccountData.user.username,
@@ -159,8 +138,11 @@ export class Auth implements ServiceImpl<typeof AuthService> {
     });
   }
 
-  public async webAuthn(req: WebAuthnRequest): Promise<WebAuthnResponse> {
-    const plexAccountData = await this.getPlexAccount(req.plexToken);
+  public async webAuthn(
+    req: WebAuthnRequest,
+    ctx: HandlerContext,
+  ): Promise<WebAuthnResponse> {
+    const plexAccountData = await getPlexAccount(req.plexToken);
 
     const user = await prisma.user.findUnique({
       where: {
@@ -175,17 +157,17 @@ export class Auth implements ServiceImpl<typeof AuthService> {
       },
     });
 
-    if (!user) {
-      throw new ConnectError("User not found.", Code.NotFound);
-    }
+    if (!user) throw new ConnectError("User not found.", Code.NotFound);
 
-    if (!user.challenge) {
+    this.userManager.setUserID(user.id);
+
+    const challenge = await redis.get(`challenge:${user.id}`);
+
+    if (!challenge)
       throw new ConnectError(
         "Challenge has not been generated yet.",
         Code.FailedPrecondition,
       );
-    }
-    console.log("Number of authenticators: ", user._count.authenticators);
 
     if (user._count.authenticators > 0) {
       const response = JSON.parse(
@@ -201,15 +183,14 @@ export class Auth implements ServiceImpl<typeof AuthService> {
           throw new ConnectError(err.message, Code.Internal);
         });
 
-      if (!authenticator) {
+      if (!authenticator)
         throw new ConnectError("Authenticator not found", Code.NotFound);
-      }
 
       const verification = await verifyAuthenticationResponse({
         response,
-        expectedChallenge: user.challenge,
-        expectedOrigin: secrets.RP_ORIGIN,
-        expectedRPID: secrets.RP_ID,
+        expectedChallenge: challenge,
+        expectedOrigin: process.env.RP_ORIGIN,
+        expectedRPID: process.env.RP_ID,
         authenticator: {
           counter: authenticator.counter,
           credentialID: authenticator.credentialID,
@@ -222,9 +203,8 @@ export class Auth implements ServiceImpl<typeof AuthService> {
         throw new ConnectError(err.message, Code.Internal);
       });
 
-      if (!verification.verified) {
-        throw new ConnectError("Challenge Failed", Code.PermissionDenied);
-      }
+      if (!verification.verified)
+        throw new ConnectError("Verification Failed", Code.PermissionDenied);
 
       await prisma.authenticator
         .update({
@@ -238,41 +218,33 @@ export class Auth implements ServiceImpl<typeof AuthService> {
         .catch((err: Error) => {
           throw new ConnectError(err.message, Code.Internal);
         });
-
-      // const tokens = await generateTokens(ctx.prisma, user);
-
-      // ctx.setTokens(tokens);
-
-      return new WebAuthnResponse();
     } else {
       const authenticatorData = JSON.parse(
         decode(req.verification),
       ) as RegistrationResponseJSON;
       const verification = await verifyRegistrationResponse({
         response: authenticatorData,
-        expectedChallenge: user.challenge,
-        expectedOrigin: secrets.RP_ORIGIN,
-        expectedRPID: secrets.RP_ID,
+        expectedChallenge: challenge,
+        expectedOrigin: process.env.RP_ORIGIN,
+        expectedRPID: process.env.RP_ID,
       }).catch((err: Error) => {
         throw new ConnectError(err.message, Code.Internal);
       });
 
-      if (!verification.verified) {
-        // throw new AuthenticationError("Challenge Failed");
+      if (!verification.verified)
         throw new ConnectError("Challenge Failed", Code.PermissionDenied);
-      }
 
-      if (!verification.registrationInfo) {
+      if (!verification.registrationInfo)
         throw new ConnectError(
           "Registration data malformed",
           Code.InvalidArgument,
         );
-      }
 
       await prisma.authenticator
         .create({
           data: {
             id: createId(),
+            friendlyName: "Primary",
             AAGUID: verification.registrationInfo.aaguid,
             credentialID: Buffer.from(
               verification.registrationInfo.credentialID,
@@ -297,10 +269,320 @@ export class Auth implements ServiceImpl<typeof AuthService> {
         .catch((err: Error) => {
           throw new ConnectError(err.message, Code.Internal);
         });
-
-      // const tokens = await generateTokens(ctx.prisma, user);
-
-      return new WebAuthnResponse();
     }
+
+    const tokenID = createId();
+
+    const token = this.userManager.generateToken(tokenID);
+
+    await redis.set(`token:${tokenID}`, user.id, {
+      EX: this.tokenExpiration,
+    });
+
+    const cookie = new CookieBuilder()
+      .name("Token")
+      .value(token)
+      .sameSite(SameSite.Strict)
+      .maxAge(this.tokenExpiration)
+      .path("/")
+      .httpOnly();
+
+    ctx.responseHeader.set(
+      "Set-Cookie",
+      process.env.NODE_ENV === "production"
+        ? cookie.domain(process.env.RP_ID).secure().build().toString()
+        : cookie.build().toString(),
+    );
+
+    return new WebAuthnResponse();
+  }
+
+  public async getAuthenticator(
+    req: GetAuthenticatorRequest,
+    ctx: HandlerContext,
+  ): Promise<GetAuthenticatorResponse> {
+    this.authorization(ctx);
+
+    const authenticator = await prisma.authenticator.findUnique({
+      where: {
+        id: req.id,
+      },
+    });
+
+    if (!authenticator) {
+      throw new ConnectError("Authenticator not found.", Code.NotFound);
+    }
+
+    if (authenticator.userId !== this.userManager.user.id) {
+      throw new ConnectError(
+        "Authenticator does not belong to the authenticated user.",
+        Code.PermissionDenied,
+      );
+    }
+
+    return new GetAuthenticatorResponse({
+      authenticator: {
+        id: authenticator.id,
+        aaguid: authenticator.AAGUID,
+        credentialId: authenticator.credentialID,
+        credentialPublicKey: authenticator.credentialPublicKey,
+        counter: authenticator.counter,
+        revoked: authenticator.revoked,
+      },
+    });
+  }
+
+  public async getAuthenticators(
+    req: GetAuthenticatorsRequest,
+    ctx: HandlerContext,
+  ): Promise<GetAuthenticatorsResponse> {
+    this.authorization(ctx);
+
+    const authenticators = await prisma.authenticator
+      .findMany({
+        where: {
+          userId: this.userManager.user.id,
+        },
+      })
+      .catch((err) => {
+        throw new ConnectError(
+          `Failed to get authenticators: ${err}`,
+          Code.Internal,
+        );
+      });
+
+    return new GetAuthenticatorsResponse({
+      authenticators: authenticators.map((authenticator) => {
+        return {
+          id: authenticator.id,
+          friendlyName: authenticator.friendlyName,
+          aaguid: authenticator.AAGUID,
+          credentialId: authenticator.credentialID,
+          credentialPublicKey: authenticator.credentialPublicKey,
+          counter: authenticator.counter,
+          revoked: authenticator.revoked,
+        };
+      }),
+    });
+  }
+
+  public async getAuthenticatorRegistrationOptions(
+    req: GetAuthenticatorRegistrationOptionsRequest,
+    ctx: HandlerContext,
+  ): Promise<GetAuthenticatorRegistrationOptionsResponse> {
+    this.authorization(ctx);
+
+    const user = this.userManager.user;
+
+    const registrationOptions = generateRegistrationOptions({
+      rpID: process.env.RP_ID,
+      rpName: process.env.RP_NAME,
+      userID: user.id,
+      userName: user.username,
+      attestationType: "direct",
+      authenticatorSelection: {
+        requireResidentKey: true,
+      },
+      // excludeCredentials
+    });
+
+    await redis.set(`challenge:${user.id}`, registrationOptions.challenge, {
+      EX: 60 * 5,
+    });
+
+    return new GetAuthenticatorRegistrationOptionsResponse({
+      options: encode(JSON.stringify(registrationOptions)),
+    });
+  }
+
+  public async addAuthenticator(
+    req: AddAuthenticatorRequest,
+    ctx: HandlerContext,
+  ): Promise<AddAuthenticatorResponse> {
+    this.authorization(ctx);
+
+    const user = this.userManager.user;
+
+    const challenge = await redis.get(`challenge:${user.id}`);
+
+    if (!challenge)
+      throw new ConnectError(
+        "Challenge has not been generated yet.",
+        Code.FailedPrecondition,
+      );
+
+    const registrationResponse = JSON.parse(
+      decode(req.verification),
+    ) as RegistrationResponseJSON;
+
+    const verification = await verifyRegistrationResponse({
+      response: registrationResponse,
+      expectedChallenge: challenge,
+      expectedOrigin: process.env.RP_ORIGIN,
+      expectedRPID: process.env.RP_ID,
+    }).catch((err: Error) => {
+      throw new ConnectError(err.message, Code.Internal);
+    });
+
+    await redis.del(`challenge:${user.id}`);
+
+    if (!verification.verified)
+      throw new ConnectError("Verification Failed", Code.PermissionDenied);
+
+    if (!verification.registrationInfo)
+      throw new ConnectError(
+        "Registration data malformed",
+        Code.InvalidArgument,
+      );
+
+    await prisma.authenticator
+      .create({
+        data: {
+          id: createId(),
+          friendlyName: req.name,
+          AAGUID: verification.registrationInfo.aaguid,
+          credentialID: Buffer.from(verification.registrationInfo.credentialID),
+          credentialPublicKey: Buffer.from(
+            verification.registrationInfo.credentialPublicKey,
+          ),
+          counter: verification.registrationInfo.counter,
+          revoked: false,
+          transports: registrationResponse.response.transports?.map(
+            (transport) => {
+              return transport.toUpperCase() as Transport;
+            },
+          ),
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
+        },
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      });
+
+    return new AddAuthenticatorResponse();
+  }
+
+  public async revokeAuthenticator(
+    req: RevokeAuthenticatorRequest,
+    ctx: HandlerContext,
+  ): Promise<RevokeAuthenticatorResponse> {
+    this.authorization(ctx);
+
+    const authenticators = await prisma.authenticator.findMany({
+      where: {
+        user: {
+          id: this.userManager.user.id,
+        },
+      },
+    });
+
+    if (authenticators.length < 2)
+      throw new ConnectError(
+        "Cannot remove the last authenticator.",
+        Code.PermissionDenied,
+      );
+
+    if (
+      authenticators.filter((authenticator) => !authenticator.revoked).length <
+      2
+    )
+      throw new ConnectError(
+        "Cannot revoke the last active authenticator.",
+        Code.PermissionDenied,
+      );
+
+    const authenticator = authenticators.find(
+      (authenticator) => authenticator.id === req.id,
+    );
+
+    if (!authenticator)
+      throw new ConnectError("Authenticator not found.", Code.NotFound);
+
+    if (authenticator.userId !== this.userManager.user.id) {
+      throw new ConnectError(
+        "Authenticator does not belong to the authenticated user.",
+        Code.PermissionDenied,
+      );
+    }
+
+    await prisma.authenticator.update({
+      where: {
+        id: req.id,
+      },
+      data: {
+        revoked: true,
+      },
+    });
+
+    return new RevokeAuthenticatorResponse();
+  }
+
+  public async getTokens(
+    req: GetTokensRequest,
+    ctx: HandlerContext,
+  ): Promise<GetTokensResponse> {
+    this.authorization(ctx);
+
+    const tokens: string[] = [];
+
+    const scanIterator = redis.scanIterator({
+      MATCH: "token:*",
+    });
+    for await (const key of scanIterator) {
+      const userId = await redis.get(key);
+
+      if (userId === this.userManager.user.id) {
+        tokens.push(key);
+      }
+    }
+
+    const data = await Promise.all(
+      tokens.map(async (token) => {
+        return {
+          id: token.split(":")[1],
+          expires: await redis.ttl(token),
+          current: token.split(":")[1] === this.userManager.tokenId,
+        };
+      }),
+    );
+
+    return new GetTokensResponse({
+      tokens: data,
+    });
+  }
+
+  public async revokeToken(
+    req: RevokeTokenRequest,
+    ctx: HandlerContext,
+  ): Promise<RevokeTokenResponse> {
+    this.authorization(ctx);
+
+    const userId = await redis.get(`token:${req.id}`);
+
+    if (!userId) {
+      throw new ConnectError("Token not found.", Code.NotFound);
+    }
+
+    if (req.id === this.userManager.tokenId) {
+      throw new ConnectError(
+        "Cannot revoke the current token.",
+        Code.PermissionDenied,
+      );
+    }
+
+    if (userId !== this.userManager.user.id) {
+      throw new ConnectError(
+        "Token does not belong to the authenticated user.",
+        Code.PermissionDenied,
+      );
+    }
+
+    await redis.del(`token:${req.id}`);
+
+    return new RevokeTokenResponse();
   }
 }

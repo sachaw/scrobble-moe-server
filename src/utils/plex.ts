@@ -1,3 +1,4 @@
+import { Code, ConnectError } from "@bufbuild/connect";
 import got from "got";
 import { ElementCompact, xml2js } from "xml-js";
 
@@ -19,6 +20,31 @@ export interface PlexServer {
   };
 }
 
+interface PlexAccountResponse {
+  user: {
+    id: number;
+    uuid: string;
+    email: string;
+    joined_at: string;
+    username: string;
+    title: string;
+    thumb: string;
+    hasPassword: boolean;
+    authToken: string;
+    authentication_token: string;
+    subscription: {
+      active: boolean;
+      status: string;
+      plan: string;
+      features: string[];
+    };
+    roles: { roles: string[] };
+  };
+  entitlements: string[];
+  confirmedAt: string;
+  forumId: string | null;
+}
+
 export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
   const serversXML = await got.get<never>(
     `https://plex.tv/api/servers?X-Plex-Token=${token}`,
@@ -27,4 +53,18 @@ export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
     .MediaContainer.Server as PlexServer[] | PlexServer;
 
   return servers instanceof Array ? servers : [servers];
+};
+
+export const getPlexAccount = async (plexToken: string) => {
+  return await got
+    .get("https://plex.tv/users/account.json", {
+      headers: {
+        "X-Plex-Token": plexToken,
+        Accept: "application/json",
+      },
+    })
+    .json<PlexAccountResponse>()
+    .catch((err: Error) => {
+      throw new ConnectError(err.message, Code.Internal);
+    });
 };
