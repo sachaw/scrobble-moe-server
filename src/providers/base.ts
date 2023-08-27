@@ -1,4 +1,3 @@
-import got, { Got } from "got";
 import { GraphQLClient } from "graphql-request";
 
 import { ScrobbleStatus } from "@prisma/client";
@@ -14,7 +13,7 @@ type ClientType = "graphql" | "rest";
 type Client<T extends ClientType> = T extends "graphql"
   ? GraphQLClient
   : T extends "rest"
-  ? Got
+  ? typeof fetch
   : never;
 
 export abstract class BaseProvider<T extends ClientType> {
@@ -30,7 +29,7 @@ export abstract class BaseProvider<T extends ClientType> {
         this.client = new GraphQLClient(this.endpoint) as Client<T>;
         break;
       case "rest":
-        this.client = got as Client<T>;
+        this.client = fetch.bind(window) as Client<T>;
         break;
       default:
         throw new Error("Invalid client type");

@@ -1,5 +1,4 @@
 import { Code, ConnectError } from "@bufbuild/connect";
-import got from "got";
 import { ElementCompact, xml2js } from "xml-js";
 
 export interface PlexServer {
@@ -46,25 +45,25 @@ interface PlexAccountResponse {
 }
 
 export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
-  const serversXML = await got.get<never>(
+  const response = await fetch(
     `https://plex.tv/api/servers?X-Plex-Token=${token}`,
   );
-  const servers = (xml2js(serversXML.body, { compact: true }) as ElementCompact)
-    .MediaContainer.Server as PlexServer[] | PlexServer;
+
+  const servers = (
+    xml2js(await response.text(), { compact: true }) as ElementCompact
+  ).MediaContainer.Server as PlexServer[] | PlexServer;
 
   return servers instanceof Array ? servers : [servers];
 };
 
 export const getPlexAccount = async (plexToken: string) => {
-  return await got
-    .get("https://plex.tv/users/account.json", {
-      headers: {
-        "X-Plex-Token": plexToken,
-        Accept: "application/json",
-      },
-    })
-    .json<PlexAccountResponse>()
-    .catch((err: Error) => {
-      throw new ConnectError(err.message, Code.Internal);
-    });
+  const response = await fetch("https://plex.tv/users/account.json", {
+    headers: {
+      "X-Plex-Token": plexToken,
+      Accept: "application/json",
+    },
+  });
+  return (await response.json().catch((err: Error) => {
+    throw new ConnectError(err.message, Code.Internal);
+  })) as PlexAccountResponse;
 };

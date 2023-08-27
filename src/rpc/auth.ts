@@ -1,8 +1,3 @@
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
-import { getPlexAccount } from "../utils/plex.js";
-import { UserManager } from "../utils/userManager.js";
-import { BaseService } from "./BaseService.js";
 import { AuthService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/auth/v1/auth_service_connect.js";
 import {
   AddAuthenticatorRequest,
@@ -47,6 +42,11 @@ import {
 import base64url from "base64url";
 import { CookieBuilder, SameSite } from "patissier";
 import { decode, encode } from "universal-base64";
+import { prisma } from "../lib/prisma.js";
+import { redis } from "../lib/redis.js";
+import { getPlexAccount } from "../utils/plex.js";
+import { UserManager } from "../utils/userManager.js";
+import { BaseService } from "./BaseService.js";
 
 export class Auth
   extends BaseService<string>
@@ -96,7 +96,7 @@ export class Auth
       | PublicKeyCredentialRequestOptionsJSON;
 
     if (isRegistering) {
-      webauthnOptions = generateRegistrationOptions({
+      webauthnOptions = await generateRegistrationOptions({
         rpID: process.env.RP_ID,
         rpName: process.env.RP_NAME,
         userID: user.id,
@@ -107,7 +107,7 @@ export class Auth
         },
       });
     } else {
-      webauthnOptions = generateAuthenticationOptions({
+      webauthnOptions = await generateAuthenticationOptions({
         rpID: process.env.RP_ID,
         userVerification: "required",
         allowCredentials: user.authenticators
@@ -374,7 +374,7 @@ export class Auth
 
     const user = this.userManager.user;
 
-    const registrationOptions = generateRegistrationOptions({
+    const registrationOptions = await generateRegistrationOptions({
       rpID: process.env.RP_ID,
       rpName: process.env.RP_NAME,
       userID: user.id,
