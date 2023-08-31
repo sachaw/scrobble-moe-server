@@ -36,8 +36,8 @@ model Authenticator {
     revoked             Boolean
     transports          Transport[]
 
-    user   User?   @relation(fields: [userId], references: [id])
-    userId String?
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
 }
 
 enum Transport {

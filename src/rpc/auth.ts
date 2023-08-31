@@ -4,10 +4,6 @@ import {
   AddAuthenticatorResponse,
   GetAuthenticatorRegistrationOptionsRequest,
   GetAuthenticatorRegistrationOptionsResponse,
-  GetAuthenticatorRequest,
-  GetAuthenticatorResponse,
-  GetAuthenticatorsRequest,
-  GetAuthenticatorsResponse,
   GetTokensRequest,
   GetTokensResponse,
   PlexAuthRequest,
@@ -24,7 +20,7 @@ import {
   ConnectError,
   HandlerContext,
   ServiceImpl,
-} from "@bufbuild/connect";
+} from "@connectrpc/connect";
 import { createId } from "@paralleldrive/cuid2";
 import { Transport } from "@prisma/client";
 import {
@@ -39,9 +35,7 @@ import {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
-import base64url from "base64url";
 import { CookieBuilder, SameSite } from "patissier";
-import { decode, encode } from "universal-base64";
 import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
 import { getPlexAccount } from "../utils/plex.js";
@@ -60,7 +54,11 @@ export class Auth
   private challengeExpiration = 60 * 5; // 5 minutes
 
   public async plexAuth(req: PlexAuthRequest): Promise<PlexAuthResponse> {
-    const plexAccountData = await getPlexAccount(req.plexToken);
+    const plexAccountData = await getPlexAccount(req.plexToken).catch(
+      (err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      },
+    );
 
     const user = await prisma.user
       .upsert({
@@ -105,6 +103,8 @@ export class Auth
         authenticatorSelection: {
           requireResidentKey: true,
         },
+      }).catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
       });
     } else {
       webauthnOptions = await generateAuthenticationOptions({
@@ -122,18 +122,27 @@ export class Auth
               type: "public-key",
             };
           }),
+      }).catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
       });
     }
-    await redis.set(`challenge:${user.id}`, webauthnOptions.challenge, {
-      EX: this.challengeExpiration,
-    });
+
+    await redis
+      .set(`challenge:${user.id}`, webauthnOptions.challenge, {
+        EX: this.challengeExpiration,
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      });
 
     return new PlexAuthResponse({
       username: plexAccountData.user.username,
       avatarUrl: plexAccountData.user.thumb,
       webauthnOptions: {
         case: isRegistering ? "create" : "request",
-        value: encode(JSON.stringify(webauthnOptions)),
+        value: Buffer.from(JSON.stringify(webauthnOptions), "ascii").toString(
+          "base64",
+        ),
       },
     });
   }
@@ -144,24 +153,35 @@ export class Auth
   ): Promise<WebAuthnResponse> {
     const plexAccountData = await getPlexAccount(req.plexToken);
 
-    const user = await prisma.user.findUnique({
-      where: {
-        plexId: plexAccountData.user.id,
-      },
-      include: {
-        _count: {
-          select: {
-            authenticators: true,
+    const user = await prisma.user
+      .findUnique({
+        where: {
+          plexId: plexAccountData.user.id,
+        },
+        include: {
+          _count: {
+            select: {
+              authenticators: true,
+            },
           },
         },
-      },
-    });
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      });
 
     if (!user) throw new ConnectError("User not found.", Code.NotFound);
 
     this.userManager.setUserID(user.id);
 
-    const challenge = await redis.get(`challenge:${user.id}`);
+    const challenge = await redis
+      .get(`challenge:${user.id}`)
+      .catch((err: Error) => {
+        throw new ConnectError(
+          `Failed to get challenge from redis: ${err}`,
+          Code.Internal,
+        );
+      });
 
     if (!challenge)
       throw new ConnectError(
@@ -171,12 +191,12 @@ export class Auth
 
     if (user._count.authenticators > 0) {
       const response = JSON.parse(
-        decode(req.verification),
+        Buffer.from(req.verification, "base64").toString("ascii"),
       ) as AuthenticationResponseJSON;
       const authenticator = await prisma.authenticator
         .findUnique({
           where: {
-            credentialID: base64url.toBuffer(response.rawId),
+            credentialID: Buffer.from(response.rawId, "base64url"),
           },
         })
         .catch((err: Error) => {
@@ -220,7 +240,7 @@ export class Auth
         });
     } else {
       const authenticatorData = JSON.parse(
-        decode(req.verification),
+        Buffer.from(req.verification, "base64").toString("ascii"),
       ) as RegistrationResponseJSON;
       const verification = await verifyRegistrationResponse({
         response: authenticatorData,
@@ -275,9 +295,13 @@ export class Auth
 
     const token = this.userManager.generateToken(tokenID);
 
-    await redis.set(`token:${tokenID}`, user.id, {
-      EX: this.tokenExpiration,
-    });
+    await redis
+      .set(`token:${tokenID}`, user.id, {
+        EX: this.tokenExpiration,
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      });
 
     const cookie = new CookieBuilder()
       .name("Token")
@@ -297,80 +321,11 @@ export class Auth
     return new WebAuthnResponse();
   }
 
-  public async getAuthenticator(
-    req: GetAuthenticatorRequest,
-    ctx: HandlerContext,
-  ): Promise<GetAuthenticatorResponse> {
-    this.authorization(ctx);
-
-    const authenticator = await prisma.authenticator.findUnique({
-      where: {
-        id: req.id,
-      },
-    });
-
-    if (!authenticator) {
-      throw new ConnectError("Authenticator not found.", Code.NotFound);
-    }
-
-    if (authenticator.userId !== this.userManager.user.id) {
-      throw new ConnectError(
-        "Authenticator does not belong to the authenticated user.",
-        Code.PermissionDenied,
-      );
-    }
-
-    return new GetAuthenticatorResponse({
-      authenticator: {
-        id: authenticator.id,
-        aaguid: authenticator.AAGUID,
-        credentialId: authenticator.credentialID,
-        credentialPublicKey: authenticator.credentialPublicKey,
-        counter: authenticator.counter,
-        revoked: authenticator.revoked,
-      },
-    });
-  }
-
-  public async getAuthenticators(
-    req: GetAuthenticatorsRequest,
-    ctx: HandlerContext,
-  ): Promise<GetAuthenticatorsResponse> {
-    this.authorization(ctx);
-
-    const authenticators = await prisma.authenticator
-      .findMany({
-        where: {
-          userId: this.userManager.user.id,
-        },
-      })
-      .catch((err) => {
-        throw new ConnectError(
-          `Failed to get authenticators: ${err}`,
-          Code.Internal,
-        );
-      });
-
-    return new GetAuthenticatorsResponse({
-      authenticators: authenticators.map((authenticator) => {
-        return {
-          id: authenticator.id,
-          friendlyName: authenticator.friendlyName,
-          aaguid: authenticator.AAGUID,
-          credentialId: authenticator.credentialID,
-          credentialPublicKey: authenticator.credentialPublicKey,
-          counter: authenticator.counter,
-          revoked: authenticator.revoked,
-        };
-      }),
-    });
-  }
-
   public async getAuthenticatorRegistrationOptions(
     req: GetAuthenticatorRegistrationOptionsRequest,
     ctx: HandlerContext,
   ): Promise<GetAuthenticatorRegistrationOptionsResponse> {
-    this.authorization(ctx);
+    await this.authorization(ctx);
 
     const user = this.userManager.user;
 
@@ -384,14 +339,23 @@ export class Auth
         requireResidentKey: true,
       },
       // excludeCredentials
+    }).catch((err: Error) => {
+      throw new ConnectError(err.message, Code.Internal);
     });
 
-    await redis.set(`challenge:${user.id}`, registrationOptions.challenge, {
-      EX: 60 * 5,
-    });
+    await redis
+      .set(`challenge:${user.id}`, registrationOptions.challenge, {
+        EX: 60 * 5,
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(err.message, Code.Internal);
+      });
 
     return new GetAuthenticatorRegistrationOptionsResponse({
-      options: encode(JSON.stringify(registrationOptions)),
+      options: Buffer.from(
+        JSON.stringify(registrationOptions),
+        "ascii",
+      ).toString("base64"),
     });
   }
 
@@ -399,11 +363,18 @@ export class Auth
     req: AddAuthenticatorRequest,
     ctx: HandlerContext,
   ): Promise<AddAuthenticatorResponse> {
-    this.authorization(ctx);
+    await this.authorization(ctx);
 
     const user = this.userManager.user;
 
-    const challenge = await redis.get(`challenge:${user.id}`);
+    const challenge = await redis
+      .get(`challenge:${user.id}`)
+      .catch((err: Error) => {
+        throw new ConnectError(
+          `Failed to get challenge from redis: ${err}`,
+          Code.Internal,
+        );
+      });
 
     if (!challenge)
       throw new ConnectError(
@@ -412,7 +383,7 @@ export class Auth
       );
 
     const registrationResponse = JSON.parse(
-      decode(req.verification),
+      Buffer.from(req.verification, "base64").toString("ascii"),
     ) as RegistrationResponseJSON;
 
     const verification = await verifyRegistrationResponse({
@@ -424,7 +395,12 @@ export class Auth
       throw new ConnectError(err.message, Code.Internal);
     });
 
-    await redis.del(`challenge:${user.id}`);
+    await redis.del(`challenge:${user.id}`).catch((err: Error) => {
+      throw new ConnectError(
+        `Failed to delete challenge from redis: ${err}`,
+        Code.Internal,
+      );
+    });
 
     if (!verification.verified)
       throw new ConnectError("Verification Failed", Code.PermissionDenied);
@@ -470,15 +446,22 @@ export class Auth
     req: RevokeAuthenticatorRequest,
     ctx: HandlerContext,
   ): Promise<RevokeAuthenticatorResponse> {
-    this.authorization(ctx);
+    await this.authorization(ctx);
 
-    const authenticators = await prisma.authenticator.findMany({
-      where: {
-        user: {
-          id: this.userManager.user.id,
+    const authenticators = await prisma.authenticator
+      .findMany({
+        where: {
+          user: {
+            id: this.userManager.user.id,
+          },
         },
-      },
-    });
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(
+          `Failed to get authenticators: ${err}`,
+          Code.Internal,
+        );
+      });
 
     if (authenticators.length < 2)
       throw new ConnectError(
@@ -509,14 +492,21 @@ export class Auth
       );
     }
 
-    await prisma.authenticator.update({
-      where: {
-        id: req.id,
-      },
-      data: {
-        revoked: true,
-      },
-    });
+    await prisma.authenticator
+      .update({
+        where: {
+          id: req.id,
+        },
+        data: {
+          revoked: true,
+        },
+      })
+      .catch((err: Error) => {
+        throw new ConnectError(
+          `Failed to revoke authenticator: ${err}`,
+          Code.Internal,
+        );
+      });
 
     return new RevokeAuthenticatorResponse();
   }
@@ -525,15 +515,21 @@ export class Auth
     req: GetTokensRequest,
     ctx: HandlerContext,
   ): Promise<GetTokensResponse> {
-    this.authorization(ctx);
+    await this.authorization(ctx);
 
     const tokens: string[] = [];
 
     const scanIterator = redis.scanIterator({
       MATCH: "token:*",
     });
+
     for await (const key of scanIterator) {
-      const userId = await redis.get(key);
+      const userId = await redis.get(key).catch((err: Error) => {
+        throw new ConnectError(
+          `Failed to get token from redis: ${err}`,
+          Code.Internal,
+        );
+      });
 
       if (userId === this.userManager.user.id) {
         tokens.push(key);
@@ -548,7 +544,9 @@ export class Auth
           current: token.split(":")[1] === this.userManager.tokenId,
         };
       }),
-    );
+    ).catch((err: Error) => {
+      throw new ConnectError(`Failed to get tokens: ${err}`, Code.Internal);
+    });
 
     return new GetTokensResponse({
       tokens: data,
@@ -559,9 +557,14 @@ export class Auth
     req: RevokeTokenRequest,
     ctx: HandlerContext,
   ): Promise<RevokeTokenResponse> {
-    this.authorization(ctx);
+    await this.authorization(ctx);
 
-    const userId = await redis.get(`token:${req.id}`);
+    const userId = await redis.get(`token:${req.id}`).catch((err: Error) => {
+      throw new ConnectError(
+        `Failed to get token from redis: ${err}`,
+        Code.Internal,
+      );
+    });
 
     if (!userId) {
       throw new ConnectError("Token not found.", Code.NotFound);
@@ -581,7 +584,12 @@ export class Auth
       );
     }
 
-    await redis.del(`token:${req.id}`);
+    await redis.del(`token:${req.id}`).catch((err: Error) => {
+      throw new ConnectError(
+        `Failed to delete token from redis: ${err}`,
+        Code.Internal,
+      );
+    });
 
     return new RevokeTokenResponse();
   }

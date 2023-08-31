@@ -1,10 +1,31 @@
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
-import { Code, ConnectError, HandlerContext } from "@bufbuild/connect";
+import { Code, ConnectError, HandlerContext } from "@connectrpc/connect";
 import { User } from "@prisma/client";
-import { Footer, Payload } from "paseto-ts/dist/lib/types.js";
 import { sign, verify } from "paseto-ts/v4";
 import { CookieBuilder } from "patissier";
+import { prisma } from "../lib/prisma.js";
+import { redis } from "../lib/redis.js";
+
+/**
+ * Shim pending: https://github.com/auth70/paseto-ts/pull/4
+ */
+export interface Payload {
+  // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+  [key: string]: any;
+  iss?: string;
+  sub?: string;
+  aud?: string;
+  exp?: string;
+  nbf?: string;
+  jti?: string;
+  iat?: string;
+}
+
+export interface Footer {
+  // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+  [key: string]: any;
+  kid?: string;
+  wpk?: string;
+}
 
 export class UserManager {
   constructor(secret: string, publicKey: string) {

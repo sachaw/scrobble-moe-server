@@ -1,22 +1,40 @@
-import { Code, ConnectError } from "@bufbuild/connect";
-import { ElementCompact, xml2js } from "xml-js";
+import { Code, ConnectError } from "@connectrpc/connect";
 
-export interface PlexServer {
-  _attributes: {
-    accessToken: string;
-    name: string;
-    address: string;
-    port: string;
-    version: string;
-    scheme: string;
-    host: string;
-    localAddresses: string;
-    machineIdentifier: string;
-    createdAt: string;
-    updatedAt: string;
-    owned: string;
-    synced: string;
-  };
+export interface PlexResource {
+  name: string;
+  product: string;
+  productVersion: string;
+  platform: string;
+  platformVersion: string;
+  device: string;
+  clientIdentifier: string;
+  createdAt: string;
+  lastSeenAt: string;
+  provides: string;
+  ownerId?: number;
+  sourceTitle?: string;
+  publicAddress: string;
+  accessToken?: string;
+  owned: boolean;
+  home: boolean;
+  synced: boolean;
+  relay: boolean;
+  presence: boolean;
+  httpsRequired: boolean;
+  publicAddressMatches: boolean;
+  dnsRebindingProtection?: boolean;
+  natLoopbackSupported?: boolean;
+  connections: Connection[];
+}
+
+export interface Connection {
+  protocol: string;
+  address: string;
+  port: number;
+  uri: string;
+  local: boolean;
+  relay: boolean;
+  IPv6: boolean;
 }
 
 interface PlexAccountResponse {
@@ -44,16 +62,21 @@ interface PlexAccountResponse {
   forumId: string | null;
 }
 
-export const getPlexServers = async (token: string): Promise<PlexServer[]> => {
-  const response = await fetch(
-    `https://plex.tv/api/servers?X-Plex-Token=${token}`,
+export const getPlexServers = async (
+  token: string,
+): Promise<PlexResource[]> => {
+  const url = new URL("https://clients.plex.tv/api/v2/resources");
+  url.searchParams.append("X-Plex-Token", token);
+  url.searchParams.append(
+    "X-Plex-Client-Identifier",
+    process.env.PLEX_CLIENT_IDENTIFIER,
   );
 
-  const servers = (
-    xml2js(await response.text(), { compact: true }) as ElementCompact
-  ).MediaContainer.Server as PlexServer[] | PlexServer;
-
-  return servers instanceof Array ? servers : [servers];
+  return (await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  }).then((res) => res.json())) as PlexResource[];
 };
 
 export const getPlexAccount = async (plexToken: string) => {
@@ -63,7 +86,11 @@ export const getPlexAccount = async (plexToken: string) => {
       Accept: "application/json",
     },
   });
-  return (await response.json().catch((err: Error) => {
+  const resJSON = await response.json().catch((err: Error) => {
     throw new ConnectError(err.message, Code.Internal);
-  })) as PlexAccountResponse;
+  });
+  if (resJSON.error) {
+    throw new ConnectError(resJSON.error, Code.Internal);
+  }
+  return resJSON as PlexAccountResponse;
 };

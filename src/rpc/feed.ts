@@ -1,9 +1,9 @@
-import { ServiceImpl } from "@bufbuild/connect";
 import { FeedService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/feed/v1/feed_service_connect.js";
 import {
   ScrobbleFeedRequest,
   ScrobbleFeedResponse,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/feed/v1/feed_pb.js";
+import { ServiceImpl } from "@connectrpc/connect";
 import { ScrobbleFeedEventStream } from "../utils/events.js";
 import { UserManager } from "../utils/userManager.js";
 
