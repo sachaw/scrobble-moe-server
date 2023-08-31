@@ -4,7 +4,7 @@
   "private": true,
   "license": "GPL-3.0-only",
   "scripts": {
-    "build": "tsc",
+    "build": "generate:prisma && tsc",
     "prestart": "prisma migrate deploy",
     "generate:buf": "buf generate protobufs",
     "generate:prisma": "prisma generate",
