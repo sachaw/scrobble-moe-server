@@ -1,9 +1,9 @@
 import { Code, ConnectError, HandlerContext } from "@connectrpc/connect";
 import { User } from "@prisma/client";
 import { sign, verify } from "paseto-ts/v4";
-import { CookieBuilder } from "patissier";
 import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
+import { generateCooke } from "./cookies.js";
 
 /**
  * Shim pending: https://github.com/auth70/paseto-ts/pull/4
@@ -83,12 +83,8 @@ export class UserManager {
       );
     }
 
-    console.log("has token");
-
     try {
       this.verifiedUserToken = verify(this.publicKey, this.PASETOToken);
-
-      console.log("verified");
 
       if (!this.verifiedUserToken.payload.jti) {
         throw new ConnectError(
@@ -97,17 +93,11 @@ export class UserManager {
         );
       }
 
-      console.log("catch1");
-
       this.tokenId = this.verifiedUserToken.payload.jti;
-
-      console.log("catchtmp2");
 
       const tokenRecord = await redis
         .get(`token:${this.verifiedUserToken.payload.jti}`)
         .catch((err) => {
-          console.log(err);
-
           throw new ConnectError(
             `Failed to get token from redis: ${err}`,
             Code.Internal,
@@ -120,8 +110,6 @@ export class UserManager {
           Code.NotFound,
         );
 
-      console.log("catch2");
-
       const user = await prisma.user
         .findUnique({
           where: {
@@ -129,12 +117,8 @@ export class UserManager {
           },
         })
         .catch((err) => {
-          console.log(err);
-
           throw new ConnectError(`Failed to find user: ${err}`, Code.Internal);
         });
-
-      console.log("catchtmp");
 
       if (tokenRecord !== this.verifiedUserToken.payload.aud) {
         throw new ConnectError(
@@ -142,8 +126,6 @@ export class UserManager {
           Code.PermissionDenied,
         );
       }
-
-      console.log("catch3");
 
       if (!user) {
         throw new ConnectError("User not found", Code.NotFound);
@@ -158,19 +140,10 @@ export class UserManager {
         Code.Unauthenticated,
       );
     }
-
-    console.log("catch4");
   }
 
   private forceExpireCookie(ctx: HandlerContext) {
-    const cookie = new CookieBuilder()
-      .name("Token")
-      .value("")
-      .httpOnly()
-      .path("/")
-      .expires(new Date())
-      .build();
-
+    const cookie = generateCooke("Token", "", 0);
     ctx.responseHeader.set("Set-Cookie", cookie.toString());
   }
 }

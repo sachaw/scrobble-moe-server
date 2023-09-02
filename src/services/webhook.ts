@@ -11,53 +11,56 @@ import { Anilist } from "../providers/anilist.js";
 
 export class Webhook implements ServiceImpl<typeof WebhookService> {
   public async scrobble(req: ScrobbleRequest): Promise<ScrobbleResponse> {
-    const { serverUuid, username } = req;
+    try {
+      const { serverUuid, username } = req;
 
-    return prisma.server
-      .findUnique({
-        where: { uuid: serverUuid },
-        include: {
-          users: {
-            include: { accounts: true },
+      return prisma.server
+        .findUnique({
+          where: { uuid: serverUuid },
+          include: {
+            users: {
+              include: { accounts: true },
+            },
           },
-        },
-      })
-      .then((server) => {
-        if (!server) {
-          return Promise.reject(
-            new ConnectError(
-              `Server with UUID: ${serverUuid} not found.`,
-              Code.NotFound,
-            ),
+        })
+        .then((server) => {
+          if (!server) {
+            return Promise.reject(
+              new ConnectError(
+                `Server with UUID: ${serverUuid} not found.`,
+                Code.NotFound,
+              ),
+            );
+          }
+
+          const user = server.users.find((u) => u.username === username);
+
+          if (!user) {
+            return Promise.reject(
+              new ConnectError(`User: ${username} not found`, Code.NotFound),
+            );
+          }
+
+          if (!user.accounts.length) {
+            return Promise.reject(
+              new ConnectError(
+                `No linked accounts for user: ${username}`,
+                Code.FailedPrecondition,
+              ),
+            );
+          }
+
+          const accountPromises = user.accounts.map((account) =>
+            this.handleAccount(account, req),
           );
-        }
 
-        const user = server.users.find((u) => u.username === username);
-
-        if (!user) {
-          return Promise.reject(
-            new ConnectError(`User: ${username} not found`, Code.NotFound),
+          return Promise.all(accountPromises).then(
+            () => new ScrobbleResponse(),
           );
-        }
-
-        if (!user.accounts.length) {
-          return Promise.reject(
-            new ConnectError(
-              `No linked accounts for user: ${username}`,
-              Code.FailedPrecondition,
-            ),
-          );
-        }
-
-        const accountPromises = user.accounts.map((account) =>
-          this.handleAccount(account, req),
-        );
-
-        return Promise.all(accountPromises).then(() => new ScrobbleResponse());
-      })
-      .catch((err) => {
-        throw new ConnectError(err.message, Code.Internal);
-      });
+        });
+    } catch (error) {
+      throw new ConnectError((error as Error).message, Code.Internal);
+    }
   }
 
   private async handleAccount(account: LinkedAccount, params: ScrobbleRequest) {

@@ -5,7 +5,7 @@ import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
 import { logger } from "@tinyhttp/logger";
 // import { createServer } from "http2";
-import { routes } from "./connect.js";
+import { routes } from "./services/index.js";
 import { UserManager } from "./utils/userManager.js";
 
 // export NODE_OPTIONS="--no-network-family-autoselection"

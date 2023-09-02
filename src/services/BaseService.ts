@@ -10,17 +10,8 @@ export abstract class BaseService<T> {
   }
 
   protected async authorization(ctx: HandlerContext, role?: Role) {
-    console.log("calling authorization");
-
     await this.userManager.verifyToken(ctx);
-
-    console.log("authorized");
-
-    console.log(this.userManager.user);
-
     const user = this.userManager.user;
-
-    console.log(user);
 
     if (!user) {
       throw new ConnectError(
@@ -29,17 +20,11 @@ export abstract class BaseService<T> {
       );
     }
 
-    if (!role || user.role === role) {
-      console.log("User has the correct role");
-
-      return;
+    if (role && user.role !== role) {
+      throw new ConnectError(
+        `User does not have the ${role} role.`,
+        Code.PermissionDenied,
+      );
     }
-
-    console.log("User does not have the correct role");
-
-    throw new ConnectError(
-      `User does not have the ${role} role.`,
-      Code.PermissionDenied,
-    );
   }
 }

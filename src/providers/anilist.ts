@@ -24,16 +24,6 @@ import {
 } from "./graphql/queries/mediaList.js";
 import { USER_ID, UserIdResponse } from "./graphql/queries/userId.js";
 
-// export class Scrobble {
-//   providerMediaId: string;
-//   episode: number;
-//   user: User;
-//   server: Server;
-//   accounts: LinkedAccount[];
-//   status: ScrobbleProviderStatus[];
-//   anilistData?: AniListData;
-// }
-
 export class AniListData {
   id: number;
   title: string;

@@ -38,6 +38,7 @@ import {
 import { CookieBuilder, SameSite } from "patissier";
 import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
+import { generateCooke } from "../utils/cookies.js";
 import { base64Decode, base64Encode } from "../utils/format.js";
 import { getPlexAccount } from "../utils/plex.js";
 import { UserManager } from "../utils/userManager.js";
@@ -264,24 +265,9 @@ export class Auth
         EX: this.tokenExpiration,
       });
 
-      const cookie = new CookieBuilder()
-        .name("Token")
-        .value(token)
-        .sameSite(SameSite.Strict)
-        .maxAge(this.tokenExpiration)
-        .path("/")
-        .httpOnly();
+      const cookie = generateCooke("Token", token, this.tokenExpiration);
 
-      if (process.env.NODE_ENV === "production") {
-        cookie.secure();
-      }
-
-      ctx.responseHeader.set(
-        "Set-Cookie",
-        process.env.NODE_ENV === "production"
-          ? cookie.domain(process.env.RP_ID).secure().build().toString()
-          : cookie.build().toString(),
-      );
+      ctx.responseHeader.set("Set-Cookie", cookie.toString());
 
       return new WebAuthnResponse();
     } catch (error) {
