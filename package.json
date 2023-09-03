@@ -1,5 +1,5 @@
 {
-  "name": "scrobble-moe-server",
+  "name": "scrobble-moe_server",
   "type": "module",
   "private": true,
   "license": "GPL-3.0-only",
