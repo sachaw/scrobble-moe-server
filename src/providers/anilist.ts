@@ -38,6 +38,7 @@ export class AniListData {
   coverImage: string;
   bannerImage?: string;
   episodes: number;
+  duration: number;
 }
 
 export class ScrobbleFeed {
@@ -125,6 +126,7 @@ export class Anilist extends BaseProvider<"graphql"> {
           coverImage: media.coverImage.extraLarge,
           bannerImage: media.bannerImage,
           episodes: media.episodes,
+          duration: media.duration,
         };
         await redis.set(media.id.toString(), JSON.stringify(aniListEntry)); //TODO: set cache expiry
         aniListEntries.push(aniListEntry);

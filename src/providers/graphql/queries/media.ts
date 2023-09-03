@@ -20,6 +20,7 @@ export interface MediaResponse {
       };
       bannerImage?: string;
       episodes: number;
+      duration: number;
     }[];
   };
 }
@@ -44,6 +45,7 @@ export const MEDIA = gql`
         }
         bannerImage
         episodes
+        duration
       }
     }
   }

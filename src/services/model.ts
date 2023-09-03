@@ -4,6 +4,7 @@ import {
   AddLinkedAccountResponse,
   AddServerRequest,
   AddServerResponse,
+  AnimeInfoStatus,
   GetAuthenticatorRequest,
   GetAuthenticatorResponse,
   GetAuthenticatorsRequest,
@@ -31,6 +32,7 @@ import {
   RemoveScrobbleResponse,
   ScrobbleStatus,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/model/v1/model_pb.js";
+import { Timestamp } from "@bufbuild/protobuf";
 import {
   Code,
   ConnectError,
@@ -39,7 +41,7 @@ import {
 } from "@connectrpc/connect";
 import { createId } from "@paralleldrive/cuid2";
 import { prisma } from "../lib/prisma.js";
-import { Anilist } from "../providers/anilist.js";
+import { Anilist, anilist } from "../providers/anilist.js";
 import { getPlexServers } from "../utils/plex.js";
 import { UserManager } from "../utils/userManager.js";
 import { BaseService } from "./BaseService.js";
@@ -162,8 +164,8 @@ export class Model
       return new GetServerResponse({
         server: {
           id: server.id,
-          createdAt: server.createdAt.getTime(),
-          updatedAt: server.updatedAt.getTime(),
+          createdAt: Timestamp.fromDate(server.createdAt),
+          updatedAt: Timestamp.fromDate(server.updatedAt),
           name: server.name,
           uuid: server.uuid,
           secret: server.secret,
@@ -264,20 +266,32 @@ export class Model
         );
       }
 
+      const anime = (
+        await anilist.getAnimeInfo([parseInt(scrobble.providerMediaId)])
+      )[0];
+
       return new GetScrobbleResponse({
         scrobble: {
           id: scrobble.id,
-          createdAt: scrobble.createdAt.getTime(),
-          updatedAt: scrobble.updatedAt.getTime(),
+          createdAt: Timestamp.fromDate(scrobble.createdAt),
+          updatedAt: Timestamp.fromDate(scrobble.updatedAt),
           providerMediaId: scrobble.providerMediaId,
           episode: scrobble.episode,
+          anime: {
+            title: anime?.title,
+            description: anime?.description,
+            episodes: anime?.episodes,
+            duration: anime?.duration,
+            coverImage: anime?.coverImage,
+            status: AnimeInfoStatus[anime?.status ?? "FINISHED"],
+          },
           userId: scrobble.userId,
           serverId: scrobble.serverId,
           status: scrobble.status.map((status) => {
             return {
               id: status.id,
-              createdAt: status.createdAt.getTime(),
-              updatedAt: status.updatedAt.getTime(),
+              createdAt: Timestamp.fromDate(status.createdAt),
+              updatedAt: Timestamp.fromDate(status.updatedAt),
               status: ScrobbleStatus[status.status],
               provider: Provider[status.provider],
               scrobbleId: status.scrobbleId,
@@ -303,21 +317,40 @@ export class Model
         },
       });
 
+      const animeInfo = await anilist.getAnimeInfo([
+        // Reduce to unique values
+        ...new Set(
+          scrobbles.map((scrobble) => parseInt(scrobble.providerMediaId)),
+        ),
+      ]);
+
       return new GetScrobblesResponse({
         scrobbles: scrobbles.map((scrobble) => {
+          const anime = animeInfo.find(
+            (anime) => anime.id === parseInt(scrobble.providerMediaId),
+          );
+
           return {
             id: scrobble.id,
-            createdAt: scrobble.createdAt.getTime(),
-            updatedAt: scrobble.updatedAt.getTime(),
+            createdAt: Timestamp.fromDate(scrobble.createdAt),
+            updatedAt: Timestamp.fromDate(scrobble.updatedAt),
             providerMediaId: scrobble.providerMediaId,
             episode: scrobble.episode,
+            anime: {
+              title: anime?.title,
+              description: anime?.description,
+              episodes: anime?.episodes,
+              duration: anime?.duration,
+              coverImage: anime?.coverImage,
+              status: AnimeInfoStatus[anime?.status ?? "FINISHED"],
+            },
             userId: scrobble.userId,
             serverId: scrobble.serverId,
             status: scrobble.status.map((status) => {
               return {
                 id: status.id,
-                createdAt: status.createdAt.getTime(),
-                updatedAt: status.updatedAt.getTime(),
+                createdAt: Timestamp.fromDate(status.createdAt),
+                updatedAt: Timestamp.fromDate(status.updatedAt),
                 status: ScrobbleStatus[status.status],
                 provider: Provider[status.provider],
                 scrobbleId: status.scrobbleId,
@@ -327,6 +360,8 @@ export class Model
         }),
       });
     } catch (error) {
+      console.error(error);
+
       throw new ConnectError((error as Error).message, Code.Internal);
     }
   }
@@ -395,12 +430,14 @@ export class Model
       return new GetLinkedAccountResponse({
         account: {
           id: linkedAccount.id,
-          createdAt: linkedAccount.createdAt.getTime(),
-          updatedAt: linkedAccount.updatedAt.getTime(),
+          createdAt: Timestamp.fromDate(linkedAccount.createdAt),
+          updatedAt: Timestamp.fromDate(linkedAccount.updatedAt),
           provider: Provider[linkedAccount.provider],
           accountId: linkedAccount.accountId,
           accessToken: linkedAccount.accessToken,
-          accessTokenExpires: linkedAccount.accessTokenExpires?.getTime(),
+          accessTokenExpires: linkedAccount.accessTokenExpires
+            ? Timestamp.fromDate(linkedAccount.accessTokenExpires)
+            : undefined,
           refreshToken: linkedAccount.refreshToken ?? "",
         },
       });
@@ -426,12 +463,14 @@ export class Model
         accounts: linkedAccounts.map((linkedAccount) => {
           return {
             id: linkedAccount.id,
-            createdAt: linkedAccount.createdAt.getTime(),
-            updatedAt: linkedAccount.updatedAt.getTime(),
+            createdAt: Timestamp.fromDate(linkedAccount.createdAt),
+            updatedAt: Timestamp.fromDate(linkedAccount.updatedAt),
             provider: Provider[linkedAccount.provider],
             accountId: linkedAccount.accountId,
             accessToken: linkedAccount.accessToken,
-            accessTokenExpires: linkedAccount.accessTokenExpires?.getTime(),
+            accessTokenExpires: linkedAccount.accessTokenExpires
+              ? Timestamp.fromDate(linkedAccount.accessTokenExpires)
+              : undefined,
             refreshToken: linkedAccount.refreshToken ?? "",
           };
         }),
@@ -498,12 +537,14 @@ export class Model
       return new AddLinkedAccountResponse({
         account: {
           id: linkedAccount.id,
-          createdAt: linkedAccount.createdAt.getTime(),
-          updatedAt: linkedAccount.updatedAt.getTime(),
+          createdAt: Timestamp.fromDate(linkedAccount.createdAt),
+          updatedAt: Timestamp.fromDate(linkedAccount.updatedAt),
           provider: Provider[linkedAccount.provider],
           accountId: linkedAccount.accountId,
           accessToken: linkedAccount.accessToken,
-          accessTokenExpires: linkedAccount.accessTokenExpires?.getTime(),
+          accessTokenExpires: linkedAccount.accessTokenExpires
+            ? Timestamp.fromDate(linkedAccount.accessTokenExpires)
+            : undefined,
           refreshToken: linkedAccount.refreshToken ?? "",
         },
       });

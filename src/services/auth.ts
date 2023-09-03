@@ -15,6 +15,7 @@ import {
   WebAuthnRequest,
   WebAuthnResponse,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/auth/v1/auth_pb.js";
+import { Timestamp } from "@bufbuild/protobuf";
 import {
   Code,
   ConnectError,
@@ -461,7 +462,7 @@ export class Auth
         tokens.map(async (token) => {
           return {
             id: token.split(":")[1],
-            expires: await redis.ttl(token),
+            expires: Timestamp.fromDate(new Date(await redis.ttl(token))),
             current: token.split(":")[1] === this.userManager.tokenId,
           };
         }),
