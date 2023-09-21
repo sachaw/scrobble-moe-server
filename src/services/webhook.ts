@@ -64,60 +64,75 @@ export class Webhook implements ServiceImpl<typeof WebhookService> {
   }
 
   private async handleAccount(account: LinkedAccount, params: ScrobbleRequest) {
-    const { serverUuid, providerMediaId, episode, secret } = params;
+    try {
+      const { serverUuid, providerMediaId, episode, secret } = params;
 
-    switch (account.provider) {
-      case Provider.ANILIST: {
-        const anilist = new Anilist(account.accessToken);
-        return prisma.scrobble
-          .findFirst({
-            where: {
-              providerMediaId,
-              episode,
-              user: { id: account.userId },
-            },
-          })
-          .then((existingScrobble) => {
-            const newScrobbleId = createId();
-            return anilist
-              .setProgress(parseInt(providerMediaId), episode)
-              .then((status) =>
-                prisma.scrobbleProviderStatus.create({
-                  data: {
-                    id: createId(),
-                    provider: account.provider,
-                    status,
-                    scrobble: {
-                      connectOrCreate: {
-                        create: {
-                          id: newScrobbleId,
-                          episode,
-                          providerMediaId,
-                          server: { connect: { uuid: serverUuid, secret } },
-                          user: { connect: { id: account.userId } },
-                        },
-                        where: {
-                          id: existingScrobble
-                            ? existingScrobble.id
-                            : newScrobbleId,
-                        },
-                      },
-                    },
+      const scrobbleEpisode = await prisma.scrobbleEpisode.create({
+        data: {
+          id: createId(),
+          episode,
+          scrobbleGroup: {
+            connectOrCreate: {
+              where: {
+                userId_providerMediaId: {
+                  userId: account.userId,
+                  providerMediaId,
+                },
+              },
+              create: {
+                id: createId(),
+                providerMediaId,
+                user: {
+                  connect: {
+                    id: account.userId,
                   },
-                }),
-              )
-              .catch((err) => {
-                return Promise.reject(
-                  new ConnectError(
-                    `Scrobble failed at provider ${account.provider} for media ${providerMediaId}:${episode}. Error: ${err}`,
-                  ),
-                );
-              });
+                },
+              },
+            },
+          },
+          server: {
+            connect: {
+              uuid: serverUuid,
+            },
+          },
+        },
+      });
+
+      switch (account.provider) {
+        case Provider.ANILIST: {
+          const anilist = new Anilist(account.accessToken);
+
+          const scrobbleStatus = await anilist.setProgress(
+            parseInt(providerMediaId),
+            episode,
+          );
+
+          await prisma.scrobbleEpisode.update({
+            where: {
+              id: scrobbleEpisode.id,
+            },
+            data: {
+              accounts: {
+                connect: {
+                  id: account.id,
+                },
+              },
+              status: {
+                create: {
+                  id: createId(),
+                  status: scrobbleStatus,
+                  provider: account.provider,
+                },
+              },
+            },
           });
+        }
+        case Provider.KITSU: {
+        }
+        break;
       }
-      case Provider.KITSU: {
-      }
-      break;
+    } catch (error) {
+      throw new ConnectError((error as Error).message, Code.Internal);
     }
   }
 }

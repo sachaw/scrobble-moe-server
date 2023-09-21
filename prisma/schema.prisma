@@ -20,7 +20,7 @@ model User {
 
     authenticators Authenticator[]
     accounts       LinkedAccount[]
-    scrobbles      Scrobble[]
+    scrobbleGroups ScrobbleGroup[]
     servers        Server[]
 }
 
@@ -61,23 +61,35 @@ model Server {
     secret    String   @unique
     name      String
 
-    users     User[]
-    scrobbles Scrobble[]
+    users            User[]
+    scrobbleEpisodes ScrobbleEpisode[]
 }
 
-model Scrobble {
+model ScrobbleGroup {
     id              String   @id
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
     providerMediaId String
-    episode         Int
 
-    user     User                     @relation(fields: [userId], references: [id])
-    userId   String
-    server   Server                   @relation(fields: [serverId], references: [id])
-    serverId String
-    accounts LinkedAccount[]
-    status   ScrobbleProviderStatus[]
+    user             User              @relation(fields: [userId], references: [id])
+    userId           String
+    scrobbleEpisodes ScrobbleEpisode[]
+
+    @@unique([userId, providerMediaId])
+}
+
+model ScrobbleEpisode {
+    id        String   @id
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    episode   Int
+
+    scrobbleGroup   ScrobbleGroup            @relation(fields: [scrobbleGroupId], references: [id])
+    scrobbleGroupId String
+    server          Server                   @relation(fields: [serverId], references: [id])
+    serverId        String
+    accounts        LinkedAccount[]
+    status          ScrobbleProviderStatus[]
 }
 
 model ScrobbleProviderStatus {
@@ -87,8 +99,8 @@ model ScrobbleProviderStatus {
     status    ScrobbleStatus
     provider  Provider
 
-    scrobble   Scrobble @relation(fields: [scrobbleId], references: [id])
-    scrobbleId String
+    scrobbleEpisode   ScrobbleEpisode @relation(fields: [scrobbleEpisodeId], references: [id])
+    scrobbleEpisodeId String
 }
 
 enum ScrobbleStatus {
@@ -107,9 +119,9 @@ model LinkedAccount {
     accessTokenExpires DateTime?
     refreshToken       String?
 
-    scrobbles Scrobble[]
-    user      User       @relation(fields: [userId], references: [id])
-    userId    String
+    user             User              @relation(fields: [userId], references: [id])
+    userId           String
+    scrobbleEpisodes ScrobbleEpisode[]
 }
 
 enum Provider {

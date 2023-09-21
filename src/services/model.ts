@@ -13,10 +13,14 @@ import {
   GetLinkedAccountResponse,
   GetLinkedAccountsRequest,
   GetLinkedAccountsResponse,
-  GetScrobbleRequest,
-  GetScrobbleResponse,
-  GetScrobblesRequest,
-  GetScrobblesResponse,
+  GetScrobbleEpisodeRequest,
+  GetScrobbleEpisodeResponse,
+  GetScrobbleEpisodesRequest,
+  GetScrobbleEpisodesResponse,
+  GetScrobbleGroupRequest,
+  GetScrobbleGroupResponse,
+  GetScrobbleGroupsRequest,
+  GetScrobbleGroupsResponse,
   GetServerRequest,
   GetServerResponse,
   GetServersRequest,
@@ -28,8 +32,10 @@ import {
   Provider,
   RemoveLinkedAccountRequest,
   RemoveLinkedAccountResponse,
-  RemoveScrobbleRequest,
-  RemoveScrobbleResponse,
+  RemoveScrobbleEpisodeRequest,
+  RemoveScrobbleEpisodeResponse,
+  RemoveScrobbleGroupRequest,
+  RemoveScrobbleGroupResponse,
   ScrobbleStatus,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/model/v1/model_pb.js";
 import { Timestamp } from "@bufbuild/protobuf";
@@ -242,24 +248,31 @@ export class Model
    * Scrobble RPC's
    */
 
-  public async getScrobble(req: GetScrobbleRequest, ctx: HandlerContext) {
+  public async getScrobbleGroup(
+    req: GetScrobbleGroupRequest,
+    ctx: HandlerContext,
+  ) {
     try {
       await this.authorization(ctx);
 
-      const scrobble = await prisma.scrobble.findUnique({
+      const scrobbleGroup = await prisma.scrobbleGroup.findUnique({
         where: {
           id: req.id,
         },
         include: {
-          status: true,
+          scrobbleEpisodes: {
+            include: {
+              status: true,
+            },
+          },
         },
       });
 
-      if (!scrobble) {
+      if (!scrobbleGroup) {
         throw new ConnectError("Scrobble not found.", Code.NotFound);
       }
 
-      if (scrobble.userId !== this.userManager.user.id) {
+      if (scrobbleGroup.userId !== this.userManager.user.id) {
         throw new ConnectError(
           "Scrobble does not belong to the authenticated user.",
           Code.PermissionDenied,
@@ -267,16 +280,15 @@ export class Model
       }
 
       const anime = (
-        await anilist.getAnimeInfo([parseInt(scrobble.providerMediaId)])
+        await anilist.getAnimeInfo([parseInt(scrobbleGroup.providerMediaId)])
       )[0];
 
-      return new GetScrobbleResponse({
-        scrobble: {
-          id: scrobble.id,
-          createdAt: Timestamp.fromDate(scrobble.createdAt),
-          updatedAt: Timestamp.fromDate(scrobble.updatedAt),
-          providerMediaId: scrobble.providerMediaId,
-          episode: scrobble.episode,
+      return new GetScrobbleGroupResponse({
+        scrobbleGroup: {
+          id: scrobbleGroup.id,
+          createdAt: Timestamp.fromDate(scrobbleGroup.createdAt),
+          updatedAt: Timestamp.fromDate(scrobbleGroup.updatedAt),
+          providerMediaId: scrobbleGroup.providerMediaId,
           anime: {
             title: anime?.title,
             description: anime?.description,
@@ -285,18 +297,28 @@ export class Model
             coverImage: anime?.coverImage,
             status: AnimeInfoStatus[anime?.status ?? "FINISHED"],
           },
-          userId: scrobble.userId,
-          serverId: scrobble.serverId,
-          status: scrobble.status.map((status) => {
-            return {
-              id: status.id,
-              createdAt: Timestamp.fromDate(status.createdAt),
-              updatedAt: Timestamp.fromDate(status.updatedAt),
-              status: ScrobbleStatus[status.status],
-              provider: Provider[status.provider],
-              scrobbleId: status.scrobbleId,
-            };
-          }),
+          userId: scrobbleGroup.userId,
+          scrobbleEpisodes: scrobbleGroup.scrobbleEpisodes.map(
+            (scrobbleEpisode) => {
+              return {
+                id: scrobbleEpisode.id,
+                createdAt: Timestamp.fromDate(scrobbleEpisode.createdAt),
+                updatedAt: Timestamp.fromDate(scrobbleEpisode.updatedAt),
+                episode: scrobbleEpisode.episode,
+                scrobbleGroupId: scrobbleEpisode.scrobbleGroupId,
+                status: scrobbleEpisode.status.map((status) => {
+                  return {
+                    id: status.id,
+                    createdAt: Timestamp.fromDate(status.createdAt),
+                    updatedAt: Timestamp.fromDate(status.updatedAt),
+                    status: ScrobbleStatus[status.status],
+                    provider: Provider[status.provider],
+                    scrobbleEpisodeId: status.scrobbleEpisodeId,
+                  };
+                }),
+              };
+            },
+          ),
         },
       });
     } catch (error) {
@@ -304,28 +326,35 @@ export class Model
     }
   }
 
-  public async getScrobbles(req: GetScrobblesRequest, ctx: HandlerContext) {
+  public async getScrobbleGroups(
+    req: GetScrobbleGroupsRequest,
+    ctx: HandlerContext,
+  ) {
     try {
       await this.authorization(ctx);
 
-      const scrobbles = await prisma.scrobble.findMany({
+      const scrobbleGroups = await prisma.scrobbleGroup.findMany({
         where: {
           userId: this.userManager.user.id,
         },
         include: {
-          status: true,
+          scrobbleEpisodes: {
+            include: {
+              status: true,
+            },
+          },
         },
       });
 
       const animeInfo = await anilist.getAnimeInfo([
         // Reduce to unique values
         ...new Set(
-          scrobbles.map((scrobble) => parseInt(scrobble.providerMediaId)),
+          scrobbleGroups.map((scrobble) => parseInt(scrobble.providerMediaId)),
         ),
       ]);
 
-      return new GetScrobblesResponse({
-        scrobbles: scrobbles.map((scrobble) => {
+      return new GetScrobbleGroupsResponse({
+        scrobbleGroups: scrobbleGroups.map((scrobble) => {
           const anime = animeInfo.find(
             (anime) => anime.id === parseInt(scrobble.providerMediaId),
           );
@@ -335,7 +364,6 @@ export class Model
             createdAt: Timestamp.fromDate(scrobble.createdAt),
             updatedAt: Timestamp.fromDate(scrobble.updatedAt),
             providerMediaId: scrobble.providerMediaId,
-            episode: scrobble.episode,
             anime: {
               title: anime?.title,
               description: anime?.description,
@@ -345,17 +373,27 @@ export class Model
               status: AnimeInfoStatus[anime?.status ?? "FINISHED"],
             },
             userId: scrobble.userId,
-            serverId: scrobble.serverId,
-            status: scrobble.status.map((status) => {
-              return {
-                id: status.id,
-                createdAt: Timestamp.fromDate(status.createdAt),
-                updatedAt: Timestamp.fromDate(status.updatedAt),
-                status: ScrobbleStatus[status.status],
-                provider: Provider[status.provider],
-                scrobbleId: status.scrobbleId,
-              };
-            }),
+            scrobbleEpisodes: scrobble.scrobbleEpisodes.map(
+              (scrobbleEpisode) => {
+                return {
+                  id: scrobbleEpisode.id,
+                  createdAt: Timestamp.fromDate(scrobbleEpisode.createdAt),
+                  updatedAt: Timestamp.fromDate(scrobbleEpisode.updatedAt),
+                  episode: scrobbleEpisode.episode,
+                  scrobbleGroupId: scrobbleEpisode.scrobbleGroupId,
+                  status: scrobbleEpisode.status.map((status) => {
+                    return {
+                      id: status.id,
+                      createdAt: Timestamp.fromDate(status.createdAt),
+                      updatedAt: Timestamp.fromDate(status.updatedAt),
+                      status: ScrobbleStatus[status.status],
+                      provider: Provider[status.provider],
+                      scrobbleEpisodeId: status.scrobbleEpisodeId,
+                    };
+                  }),
+                };
+              },
+            ),
           };
         }),
       });
@@ -366,37 +404,45 @@ export class Model
     }
   }
 
-  public async removeScrobble(req: RemoveScrobbleRequest, ctx: HandlerContext) {
+  public async removeScrobbleGroup(
+    req: RemoveScrobbleGroupRequest,
+    ctx: HandlerContext,
+  ) {
     try {
       await this.authorization(ctx);
 
-      const scrobble = await prisma.scrobble.findUnique({
+      await prisma.scrobbleGroup.delete({
         where: {
           id: req.id,
+          userId: this.userManager.user.id,
         },
       });
 
-      if (!scrobble) {
-        throw new ConnectError("Scrobble not found.", Code.NotFound);
-      }
-
-      if (scrobble.userId !== this.userManager.user.id) {
-        throw new ConnectError(
-          "Scrobble does not belong to the authenticated user.",
-          Code.PermissionDenied,
-        );
-      }
-
-      await prisma.scrobble.delete({
-        where: {
-          id: req.id,
-        },
-      });
-
-      return new RemoveScrobbleResponse();
+      return new RemoveScrobbleGroupResponse();
     } catch (error) {
       throw new ConnectError((error as Error).message, Code.Internal);
     }
+  }
+
+  public async getScrobbleEpisode(
+    req: GetScrobbleEpisodeRequest,
+    ctx: HandlerContext,
+  ) {
+    return new GetScrobbleEpisodeResponse();
+  }
+
+  public async getScrobbleEpisodes(
+    req: GetScrobbleEpisodesRequest,
+    ctx: HandlerContext,
+  ) {
+    return new GetScrobbleEpisodesResponse();
+  }
+
+  public async removeScrobbleEpisode(
+    req: RemoveScrobbleEpisodeRequest,
+    ctx: HandlerContext,
+  ) {
+    return new RemoveScrobbleEpisodeResponse();
   }
 
   /**
@@ -560,26 +606,10 @@ export class Model
     try {
       await this.authorization(ctx);
 
-      const linkedAccount = await prisma.linkedAccount.findUnique({
-        where: {
-          id: req.id,
-        },
-      });
-
-      if (!linkedAccount) {
-        throw new ConnectError("Linked account not found.", Code.NotFound);
-      }
-
-      if (linkedAccount.userId !== this.userManager.user.id) {
-        throw new ConnectError(
-          "Linked account does not belong to the authenticated user.",
-          Code.PermissionDenied,
-        );
-      }
-
       await prisma.linkedAccount.delete({
         where: {
           id: req.id,
+          userId: this.userManager.user.id,
         },
       });
 

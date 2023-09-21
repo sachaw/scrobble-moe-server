@@ -1,11 +1,8 @@
 -- CreateEnum
-CREATE TYPE "Transport" AS ENUM ('USB', 'BLE', 'NFC', 'INTERNAL');
+CREATE TYPE "Transport" AS ENUM ('USB', 'BLE', 'NFC', 'INTERNAL', 'HYBRID');
 
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
-
--- CreateEnum
-CREATE TYPE "TokenType" AS ENUM ('ACCESS', 'REFRESH');
 
 -- CreateEnum
 CREATE TYPE "ScrobbleStatus" AS ENUM ('IGNORED', 'TRACKED', 'ERRORED');
@@ -23,10 +20,7 @@ CREATE TABLE "User" (
     "plexId" INTEGER NOT NULL,
     "plexAuthToken" TEXT NOT NULL,
     "thumb" TEXT NOT NULL,
-    "authenticationChallenge" TEXT,
-    "authenticationChallengeExpiresAt" TIMESTAMP(3),
-    "torrentSavePath" TEXT,
-    "role" "Role" NOT NULL DEFAULT E'USER',
+    "role" "Role" NOT NULL DEFAULT 'USER',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -36,28 +30,16 @@ CREATE TABLE "Authenticator" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "friendlyName" TEXT NOT NULL,
     "AAGUID" TEXT NOT NULL,
     "credentialID" BYTEA NOT NULL,
     "credentialPublicKey" BYTEA NOT NULL,
     "counter" INTEGER NOT NULL,
     "revoked" BOOLEAN NOT NULL,
     "transports" "Transport"[],
-    "userId" TEXT,
-
-    CONSTRAINT "Authenticator_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Token" (
-    "id" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "hashedToken" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-    "type" "TokenType" NOT NULL,
     "userId" TEXT NOT NULL,
 
-    CONSTRAINT "Token_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Authenticator_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -73,16 +55,26 @@ CREATE TABLE "Server" (
 );
 
 -- CreateTable
-CREATE TABLE "Scrobble" (
+CREATE TABLE "ScrobbleGroup" (
     "id" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "providerMediaId" TEXT NOT NULL,
-    "episode" INTEGER NOT NULL,
     "userId" TEXT NOT NULL,
+
+    CONSTRAINT "ScrobbleGroup_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ScrobbleEpisode" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "episode" INTEGER NOT NULL,
+    "scrobbleGroupId" TEXT NOT NULL,
     "serverId" TEXT NOT NULL,
 
-    CONSTRAINT "Scrobble_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ScrobbleEpisode_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -92,7 +84,7 @@ CREATE TABLE "ScrobbleProviderStatus" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "status" "ScrobbleStatus" NOT NULL,
     "provider" "Provider" NOT NULL,
-    "scrobbleId" TEXT NOT NULL,
+    "scrobbleEpisodeId" TEXT NOT NULL,
 
     CONSTRAINT "ScrobbleProviderStatus_pkey" PRIMARY KEY ("id")
 );
@@ -119,7 +111,7 @@ CREATE TABLE "_ServerToUser" (
 );
 
 -- CreateTable
-CREATE TABLE "_LinkedAccountToScrobble" (
+CREATE TABLE "_LinkedAccountToScrobbleEpisode" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
 );
@@ -134,13 +126,13 @@ CREATE UNIQUE INDEX "User_plexId_key" ON "User"("plexId");
 CREATE UNIQUE INDEX "Authenticator_credentialID_key" ON "Authenticator"("credentialID");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Token_hashedToken_key" ON "Token"("hashedToken");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Server_uuid_key" ON "Server"("uuid");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Server_secret_key" ON "Server"("secret");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ScrobbleGroup_userId_providerMediaId_key" ON "ScrobbleGroup"("userId", "providerMediaId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LinkedAccount_accountId_key" ON "LinkedAccount"("accountId");
@@ -152,25 +144,25 @@ CREATE UNIQUE INDEX "_ServerToUser_AB_unique" ON "_ServerToUser"("A", "B");
 CREATE INDEX "_ServerToUser_B_index" ON "_ServerToUser"("B");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "_LinkedAccountToScrobble_AB_unique" ON "_LinkedAccountToScrobble"("A", "B");
+CREATE UNIQUE INDEX "_LinkedAccountToScrobbleEpisode_AB_unique" ON "_LinkedAccountToScrobbleEpisode"("A", "B");
 
 -- CreateIndex
-CREATE INDEX "_LinkedAccountToScrobble_B_index" ON "_LinkedAccountToScrobble"("B");
+CREATE INDEX "_LinkedAccountToScrobbleEpisode_B_index" ON "_LinkedAccountToScrobbleEpisode"("B");
 
 -- AddForeignKey
-ALTER TABLE "Authenticator" ADD CONSTRAINT "Authenticator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Authenticator" ADD CONSTRAINT "Authenticator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Token" ADD CONSTRAINT "Token_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ScrobbleGroup" ADD CONSTRAINT "ScrobbleGroup_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Scrobble" ADD CONSTRAINT "Scrobble_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ScrobbleEpisode" ADD CONSTRAINT "ScrobbleEpisode_scrobbleGroupId_fkey" FOREIGN KEY ("scrobbleGroupId") REFERENCES "ScrobbleGroup"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Scrobble" ADD CONSTRAINT "Scrobble_serverId_fkey" FOREIGN KEY ("serverId") REFERENCES "Server"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ScrobbleEpisode" ADD CONSTRAINT "ScrobbleEpisode_serverId_fkey" FOREIGN KEY ("serverId") REFERENCES "Server"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ScrobbleProviderStatus" ADD CONSTRAINT "ScrobbleProviderStatus_scrobbleId_fkey" FOREIGN KEY ("scrobbleId") REFERENCES "Scrobble"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ScrobbleProviderStatus" ADD CONSTRAINT "ScrobbleProviderStatus_scrobbleEpisodeId_fkey" FOREIGN KEY ("scrobbleEpisodeId") REFERENCES "ScrobbleEpisode"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LinkedAccount" ADD CONSTRAINT "LinkedAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -182,7 +174,7 @@ ALTER TABLE "_ServerToUser" ADD CONSTRAINT "_ServerToUser_A_fkey" FOREIGN KEY ("
 ALTER TABLE "_ServerToUser" ADD CONSTRAINT "_ServerToUser_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_LinkedAccountToScrobble" ADD CONSTRAINT "_LinkedAccountToScrobble_A_fkey" FOREIGN KEY ("A") REFERENCES "LinkedAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_LinkedAccountToScrobbleEpisode" ADD CONSTRAINT "_LinkedAccountToScrobbleEpisode_A_fkey" FOREIGN KEY ("A") REFERENCES "LinkedAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_LinkedAccountToScrobble" ADD CONSTRAINT "_LinkedAccountToScrobble_B_fkey" FOREIGN KEY ("B") REFERENCES "Scrobble"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_LinkedAccountToScrobbleEpisode" ADD CONSTRAINT "_LinkedAccountToScrobbleEpisode_B_fkey" FOREIGN KEY ("B") REFERENCES "ScrobbleEpisode"("id") ON DELETE CASCADE ON UPDATE CASCADE;
