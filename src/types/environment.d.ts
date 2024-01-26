@@ -1,9 +1,10 @@
-export {};
+export type {};
 
 declare global {
-  namespace NodeJS {
+  namespace nodeJs {
     interface ProcessEnv {
       DATABASE_URL: string;
+      PULSE_API_KEY: string;
       REDIS_URL: string;
       PASETO_SECRET_KEY: string;
       PASETO_PUBLIC_KEY: string;

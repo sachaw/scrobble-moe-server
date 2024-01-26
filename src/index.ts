@@ -1,14 +1,12 @@
 import { expressConnectMiddleware } from "@connectrpc/connect-express";
 import { MetadataService } from "@simplewebauthn/server";
-import { App, Response } from "@tinyhttp/app";
+import type { Response } from "@tinyhttp/app";
+import { App } from "@tinyhttp/app";
 import { cookieParser } from "@tinyhttp/cookie-parser";
 import { cors } from "@tinyhttp/cors";
 import { logger } from "@tinyhttp/logger";
-// import { createServer } from "http2";
 import { routes } from "./services/index.js";
-import { UserManager } from "./utils/userManager.js";
-
-// export NODE_OPTIONS="--no-network-family-autoselection"
+import { UserManager } from "./utils/index.js";
 
 const app = new App();
 
@@ -71,6 +69,4 @@ app
       // @ts-ignore
     })(req, res, next);
   })
-  .listen(parseInt(process.env.PORT), async () => {
-    console.log(`🚀 Server listening on port ${process.env.PORT}`);
-  });
+  .listen(Number.parseInt(process.env.PORT));

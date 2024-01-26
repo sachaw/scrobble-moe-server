@@ -2,7 +2,7 @@ import { gql } from "graphql-request";
 
 import { ScrobbleStatus } from "@prisma/client";
 
-import { BaseProvider, ILibraryEntry } from "./base.js";
+import { BaseProvider, type LibraryEntry } from "./base.js";
 
 const MEDIA_LIST_QUERY = gql`
   query MediaList($userId: Int, $mediaId: Int) {
@@ -34,7 +34,7 @@ const MEDIA_LIST_MUTATION = gql`
   }
 `;
 
-interface IMEDIA_LIST_QUERY {
+interface ImediaListQuery {
   MediaList: {
     media: {
       id: number;
@@ -54,11 +54,14 @@ export class Kitsu extends BaseProvider<"graphql"> {
     this.client.setHeader("authorization", `Bearer ${this.accessToken}`);
   }
 
-  async getEntry(id: number): Promise<ILibraryEntry> {
-    const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_QUERY, {
-      providerUserId: this.providerUserId,
-      providerMediaId: id,
-    });
+  async getEntry(id: number): Promise<LibraryEntry> {
+    const rawData: Promise<ImediaListQuery> = this.client.request(
+      MEDIA_LIST_QUERY,
+      {
+        providerUserId: this.providerUserId,
+        providerMediaId: id,
+      },
+    );
 
     return Promise.resolve({
       mediaProviderId: (await rawData).MediaList.media.id,
@@ -68,15 +71,22 @@ export class Kitsu extends BaseProvider<"graphql"> {
     });
   }
 
-  async setProgress(id: number, episode: number, entry?: ILibraryEntry): Promise<ScrobbleStatus> {
+  async setProgress(
+    id: number,
+    episode: number,
+    entry?: LibraryEntry,
+  ): Promise<ScrobbleStatus> {
     const localEntry = entry ?? (await this.getEntry(id));
 
     if (episode > localEntry.progress) {
-      const rawData: Promise<IMEDIA_LIST_QUERY> = this.client.request(MEDIA_LIST_MUTATION, {
-        mediaId: id,
-        progress: episode,
-        status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
-      });
+      const rawData: Promise<ImediaListQuery> = this.client.request(
+        MEDIA_LIST_MUTATION,
+        {
+          mediaId: id,
+          progress: episode,
+          status: episode === localEntry.total ? "COMPLETED" : "CURRENT",
+        },
+      );
 
       // return Promise.resolve({
       //   mediaProviderId: (await rawData).MediaList.media.id,

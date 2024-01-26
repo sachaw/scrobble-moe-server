@@ -1,13 +1,13 @@
-import { WebhookService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/webhook/v1/webhook_service_connect.js";
+import type { WebhookService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/webhook/v1/webhook_service_connect.js";
 import {
-  ScrobbleRequest,
+  type ScrobbleRequest,
   ScrobbleResponse,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/webhook/v1/webhook_pb.js";
-import { Code, ConnectError, ServiceImpl } from "@connectrpc/connect";
+import { Code, ConnectError, type ServiceImpl } from "@connectrpc/connect";
 import { createId } from "@paralleldrive/cuid2";
-import { LinkedAccount, Provider } from "@prisma/client";
-import { prisma } from "../lib/prisma.js";
-import { Anilist } from "../providers/anilist.js";
+import { type LinkedAccount, Provider } from "@prisma/client";
+import { prisma } from "../lib/index.js";
+import { Anilist } from "../providers/index.js";
 
 export class Webhook implements ServiceImpl<typeof WebhookService> {
   public async scrobble(req: ScrobbleRequest): Promise<ScrobbleResponse> {
@@ -103,7 +103,7 @@ export class Webhook implements ServiceImpl<typeof WebhookService> {
           const anilist = new Anilist(account.accessToken);
 
           const scrobbleStatus = await anilist.setProgress(
-            parseInt(providerMediaId),
+            Number.parseInt(providerMediaId),
             episode,
           );
 
@@ -126,10 +126,11 @@ export class Webhook implements ServiceImpl<typeof WebhookService> {
               },
             },
           });
+          break;
         }
         case Provider.KITSU: {
+          break;
         }
-        break;
       }
     } catch (error) {
       throw new ConnectError((error as Error).message, Code.Internal);

@@ -86,11 +86,11 @@ export const getPlexAccount = async (plexToken: string) => {
       Accept: "application/json",
     },
   });
-  const resJSON = await response.json().catch((err: Error) => {
+  const resJson = await response.json().catch((err: Error) => {
     throw new ConnectError(err.message, Code.Internal);
   });
-  if (resJSON.error) {
-    throw new ConnectError(resJSON.error, Code.Internal);
+  if (resJson.error) {
+    throw new ConnectError(resJson.error, Code.Internal);
   }
-  return resJSON as PlexAccountResponse;
+  return resJson as PlexAccountResponse;
 };

@@ -1,48 +1,51 @@
-import { AuthService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/auth/v1/auth_service_connect.js";
-import {
+import type { AuthService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/auth/v1/auth_service_connect.js";
+import type {
   AddAuthenticatorRequest,
-  AddAuthenticatorResponse,
   GetAuthenticatorRegistrationOptionsRequest,
-  GetAuthenticatorRegistrationOptionsResponse,
   GetTokensRequest,
-  GetTokensResponse,
   PlexAuthRequest,
-  PlexAuthResponse,
   RevokeAuthenticatorRequest,
-  RevokeAuthenticatorResponse,
   RevokeTokenRequest,
-  RevokeTokenResponse,
   WebAuthnRequest,
+} from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/auth/v1/auth_pb.js";
+import {
+  AddAuthenticatorResponse,
+  GetAuthenticatorRegistrationOptionsResponse,
+  GetTokensResponse,
+  PlexAuthResponse,
+  RevokeAuthenticatorResponse,
+  RevokeTokenResponse,
   WebAuthnResponse,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/auth/v1/auth_pb.js";
 import { Timestamp } from "@bufbuild/protobuf";
 import {
   Code,
   ConnectError,
-  HandlerContext,
-  ServiceImpl,
+  type HandlerContext,
+  type ServiceImpl,
 } from "@connectrpc/connect";
 import { createId } from "@paralleldrive/cuid2";
-import { Transport } from "@prisma/client";
+import type { Transport } from "@prisma/client";
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import {
+import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types";
-import { CookieBuilder, SameSite } from "patissier";
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
-import { generateCooke } from "../utils/cookies.js";
-import { base64Decode, base64Encode } from "../utils/format.js";
-import { getPlexAccount } from "../utils/plex.js";
-import { UserManager } from "../utils/userManager.js";
+import { prisma, redis } from "../lib/index.js";
+import {
+  generateCooke,
+  base64Decode,
+  base64Encode,
+  getPlexAccount,
+} from "../utils/index.js";
+import type { UserManager } from "../utils/index.js";
 import { BaseService } from "./BaseService.js";
 
 export class Auth
@@ -160,7 +163,7 @@ export class Auth
         throw new ConnectError("User not found.", Code.NotFound);
       }
 
-      this.userManager.setUserID(user.id);
+      this.userManager.setUserId(user.id);
 
       const challenge = await redis.get(`challenge:${user.id}`);
 
@@ -258,11 +261,11 @@ export class Auth
         });
       }
 
-      const tokenID = createId();
+      const tokenId = createId();
 
-      const token = this.userManager.generateToken(tokenID);
+      const token = this.userManager.generateToken(tokenId);
 
-      await redis.set(`token:${tokenID}`, user.id, {
+      await redis.set(`token:${tokenId}`, user.id, {
         EX: this.tokenExpiration,
       });
 
@@ -339,14 +342,16 @@ export class Auth
 
       await redis.del(`challenge:${user.id}`);
 
-      if (!verification.verified)
+      if (!verification.verified) {
         throw new ConnectError("Verification Failed", Code.PermissionDenied);
+      }
 
-      if (!verification.registrationInfo)
+      if (!verification.registrationInfo) {
         throw new ConnectError(
           "Registration data malformed",
           Code.InvalidArgument,
         );
+      }
 
       await prisma.authenticator.create({
         data: {
@@ -393,27 +398,30 @@ export class Auth
         },
       });
 
-      if (authenticators.length < 2)
+      if (authenticators.length < 2) {
         throw new ConnectError(
           "Cannot remove the last authenticator.",
           Code.PermissionDenied,
         );
+      }
 
       if (
         authenticators.filter((authenticator) => !authenticator.revoked)
           .length < 2
-      )
+      ) {
         throw new ConnectError(
           "Cannot revoke the last active authenticator.",
           Code.PermissionDenied,
         );
+      }
 
       const authenticator = authenticators.find(
         (authenticator) => authenticator.id === req.id,
       );
 
-      if (!authenticator)
+      if (!authenticator) {
         throw new ConnectError("Authenticator not found.", Code.NotFound);
+      }
 
       if (authenticator.userId !== this.userManager.user.id) {
         throw new ConnectError(

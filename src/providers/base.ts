@@ -1,8 +1,8 @@
 import { GraphQLClient } from "graphql-request";
 
-import { ScrobbleStatus } from "@prisma/client";
+import type { ScrobbleStatus } from "@prisma/client";
 
-export interface ILibraryEntry {
+export interface LibraryEntry {
   mediaProviderId: number;
   title: string;
   progress: number;
@@ -13,8 +13,8 @@ type ClientType = "graphql" | "rest";
 type Client<T extends ClientType> = T extends "graphql"
   ? GraphQLClient
   : T extends "rest"
-  ? typeof fetch
-  : never;
+    ? typeof fetch
+    : never;
 
 export abstract class BaseProvider<T extends ClientType> {
   constructor(type: T, endpoint: string, accessToken?: string) {
@@ -25,12 +25,14 @@ export abstract class BaseProvider<T extends ClientType> {
     }
 
     switch (this.clientType) {
-      case "graphql":
+      case "graphql": {
         this.client = new GraphQLClient(this.endpoint) as Client<T>;
         break;
-      case "rest":
+      }
+      case "rest": {
         this.client = fetch.bind(window) as Client<T>;
         break;
+      }
       default:
         throw new Error("Invalid client type");
     }
@@ -46,11 +48,11 @@ export abstract class BaseProvider<T extends ClientType> {
 
   protected accessToken: string;
 
-  abstract getEntry(id: number): Promise<ILibraryEntry | undefined>;
+  abstract getEntry(id: number): Promise<LibraryEntry | undefined>;
 
   abstract setProgress(
     id: number,
     episode: number,
-    entry?: ILibraryEntry,
+    entry?: LibraryEntry,
   ): Promise<ScrobbleStatus>;
 }

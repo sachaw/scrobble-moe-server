@@ -1,40 +1,40 @@
-import { ModelService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/model/v1/model_service_connect.js";
+import type { ModelService } from "@buf/scrobble-moe_protobufs.bufbuild_connect-es/moe/scrobble/model/v1/model_service_connect.js";
 import {
-  AddLinkedAccountRequest,
+  type AddLinkedAccountRequest,
   AddLinkedAccountResponse,
-  AddServerRequest,
+  type AddServerRequest,
   AddServerResponse,
   AnimeInfoStatus,
-  GetAuthenticatorRequest,
+  type GetAuthenticatorRequest,
   GetAuthenticatorResponse,
-  GetAuthenticatorsRequest,
+  type GetAuthenticatorsRequest,
   GetAuthenticatorsResponse,
-  GetLinkedAccountRequest,
+  type GetLinkedAccountRequest,
   GetLinkedAccountResponse,
-  GetLinkedAccountsRequest,
+  type GetLinkedAccountsRequest,
   GetLinkedAccountsResponse,
-  GetScrobbleEpisodeRequest,
+  type GetScrobbleEpisodeRequest,
   GetScrobbleEpisodeResponse,
-  GetScrobbleEpisodesRequest,
+  type GetScrobbleEpisodesRequest,
   GetScrobbleEpisodesResponse,
-  GetScrobbleGroupRequest,
+  type GetScrobbleGroupRequest,
   GetScrobbleGroupResponse,
-  GetScrobbleGroupsRequest,
+  type GetScrobbleGroupsRequest,
   GetScrobbleGroupsResponse,
-  GetServerRequest,
+  type GetServerRequest,
   GetServerResponse,
-  GetServersRequest,
+  type GetServersRequest,
   GetServersResponse,
-  GetUserRequest,
+  type GetUserRequest,
   GetUserResponse,
-  GetUsersRequest,
+  type GetUsersRequest,
   GetUsersResponse,
   Provider,
-  RemoveLinkedAccountRequest,
+  type RemoveLinkedAccountRequest,
   RemoveLinkedAccountResponse,
-  RemoveScrobbleEpisodeRequest,
+  type RemoveScrobbleEpisodeRequest,
   RemoveScrobbleEpisodeResponse,
-  RemoveScrobbleGroupRequest,
+  type RemoveScrobbleGroupRequest,
   RemoveScrobbleGroupResponse,
   ScrobbleStatus,
 } from "@buf/scrobble-moe_protobufs.bufbuild_es/moe/scrobble/model/v1/model_pb.js";
@@ -42,14 +42,14 @@ import { Timestamp } from "@bufbuild/protobuf";
 import {
   Code,
   ConnectError,
-  HandlerContext,
-  ServiceImpl,
+  type HandlerContext,
+  type ServiceImpl,
 } from "@connectrpc/connect";
 import { createId } from "@paralleldrive/cuid2";
 import { prisma } from "../lib/prisma.js";
 import { Anilist, anilist } from "../providers/anilist.js";
 import { getPlexServers } from "../utils/plex.js";
-import { UserManager } from "../utils/userManager.js";
+import type { UserManager } from "../utils/userManager.js";
 import { BaseService } from "./BaseService.js";
 
 export class Model
@@ -280,7 +280,9 @@ export class Model
       }
 
       const anime = (
-        await anilist.getAnimeInfo([parseInt(scrobbleGroup.providerMediaId)])
+        await anilist.getAnimeInfo([
+          Number.parseInt(scrobbleGroup.providerMediaId),
+        ])
       )[0];
 
       return new GetScrobbleGroupResponse({
@@ -349,14 +351,16 @@ export class Model
       const animeInfo = await anilist.getAnimeInfo([
         // Reduce to unique values
         ...new Set(
-          scrobbleGroups.map((scrobble) => parseInt(scrobble.providerMediaId)),
+          scrobbleGroups.map((scrobble) =>
+            Number.parseInt(scrobble.providerMediaId),
+          ),
         ),
       ]);
 
       return new GetScrobbleGroupsResponse({
         scrobbleGroups: scrobbleGroups.map((scrobble) => {
           const anime = animeInfo.find(
-            (anime) => anime.id === parseInt(scrobble.providerMediaId),
+            (anime) => anime.id === Number.parseInt(scrobble.providerMediaId),
           );
 
           return {

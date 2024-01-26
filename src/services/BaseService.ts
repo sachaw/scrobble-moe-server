@@ -1,8 +1,9 @@
-import { Code, ConnectError, HandlerContext } from "@connectrpc/connect";
-import { Role } from "@prisma/client";
-import { UserManager } from "../utils/userManager.js";
+import { Code, ConnectError } from "@connectrpc/connect";
+import type { HandlerContext } from "@connectrpc/connect";
+import type { Role } from "@prisma/client";
+import type { UserManager } from "../utils/index.js";
 
-export abstract class BaseService<T> {
+export abstract class BaseService {
   protected userManager: UserManager;
 
   constructor(userManager: UserManager) {

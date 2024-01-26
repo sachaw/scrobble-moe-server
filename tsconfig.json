@@ -1,21 +1,30 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "strict": true,
-    "pretty": true,
-    "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "inlineSourceMap": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
     "forceConsistentCasingInFileNames": true,
-    "removeComments": true,
-    "strictPropertyInitialization": false,
-    "skipLibCheck": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/types"
-    ]
+    "importHelpers": true,
+    "removeComments": false
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"],
+  "typedocOptions": {
+    "out": "docs"
+  }
 }

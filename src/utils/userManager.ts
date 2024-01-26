@@ -1,9 +1,9 @@
-import { Code, ConnectError, HandlerContext } from "@connectrpc/connect";
-import { User } from "@prisma/client";
-import { Footer, Payload } from "paseto-ts/lib/types";
+import { Code, ConnectError } from "@connectrpc/connect";
+import type { HandlerContext } from "@connectrpc/connect";
+import type { User } from "@prisma/client";
+import type { Footer, Payload } from "paseto-ts/lib/types";
 import { sign, verify } from "paseto-ts/v4";
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
+import { prisma, redis } from "../lib/index.js";
 import { generateCooke } from "./cookies.js";
 
 export class UserManager {
@@ -12,11 +12,11 @@ export class UserManager {
     this.publicKey = publicKey;
   }
 
-  private PASETOToken?: string;
+  private pasetoToken?: string;
   private secret: string;
   private publicKey: string;
   public user: User;
-  private userID: string;
+  private userId: string;
   public tokenId: string;
   private verifiedUserToken: {
     payload: Payload;
@@ -24,19 +24,20 @@ export class UserManager {
   };
 
   public setToken(token: string) {
-    this.PASETOToken = token;
+    this.pasetoToken = token;
   }
 
-  public setUserID(id: string) {
-    this.userID = id;
+  public setUserId(id: string) {
+    this.userId = id;
   }
 
   public generateToken(id: string) {
-    if (!this.userID)
+    if (!this.userId) {
       throw new ConnectError(
         "User ID not specified for token generation",
         Code.FailedPrecondition,
       );
+    }
 
     try {
       return sign(
@@ -44,7 +45,7 @@ export class UserManager {
         {
           iss: process.env.RP_NAME,
           jti: id,
-          aud: this.userID,
+          aud: this.userId,
           exp: "7d",
         },
         {},
@@ -55,7 +56,7 @@ export class UserManager {
   }
 
   public async verifyToken(ctx: HandlerContext) {
-    if (!this.PASETOToken) {
+    if (!this.pasetoToken) {
       throw new ConnectError(
         "No token provided with request",
         Code.Unauthenticated,
@@ -63,7 +64,7 @@ export class UserManager {
     }
 
     try {
-      this.verifiedUserToken = verify(this.publicKey, this.PASETOToken);
+      this.verifiedUserToken = verify(this.publicKey, this.pasetoToken);
 
       if (!this.verifiedUserToken.payload.jti) {
         throw new ConnectError(
@@ -83,11 +84,12 @@ export class UserManager {
           );
         });
 
-      if (!tokenRecord)
+      if (!tokenRecord) {
         throw new ConnectError(
           "Token not registered with server",
           Code.NotFound,
         );
+      }
 
       const user = await prisma.user
         .findUnique({
